@@ -1,40 +1,77 @@
+import { Prisma } from "../generated/prisma/client";
 import { prisma } from "../src/lib/prisma";
+import bcrypt from "bcrypt";
+import { logger } from "../src/utils/logger";
+import { faker } from "@faker-js/faker";
 
-export const FAKE_POSTS = [
-  {
-    title: "First post",
-    body: "Lorem ipsum dolor sit, amet consectetur adipisicing elit. Veniam, maiores. Quos unde voluptatum omnis corporis autem maiores quam. Maxime, veritatis possimus voluptatibus a vitae molestiae officia sequi illum expedita nobis?",
-  },
-  {
-    title: "Second post",
-    body: "Lorem ipsum dolor sit amet consectetur adipiscing elit at nec mi convallis, gravida porttitor imperdiet venenatis dis potenti vestibulum montes ante accumsan, proin egestas eleifend risus quam vulputate inceptos nulla id cursus. Fringilla massa metus ut purus nostra hendrerit dapibus lectus, imperdiet litora tristique cubilia nisl ac nullam cum pharetra, per nec sodales magna facilisis et arcu.",
-  },
-  {
-    title: "Third post",
-    body: "Lorem ipsum dolor sit amet consectetur adipiscing elit, per posuere senectus aliquet et ridiculus nibh, habitant magna platea quis ac fringilla. Suspendisse semper nisl purus rutrum sem cubilia ad est tincidunt, tempus cum in maecenas primis urna a nisi suscipit, at blandit sagittis enim condimentum libero dictumst nam.",
-  },
-];
+// const userData: Prisma.UserCreateInput[] = [
+//   {
+//     phone: "778661260",
+//     password: "",
+//     randomToken: "sfwfx23rbkxg982ntxf80",
+//   },
+//   {
+//     phone: "778661261",
+//     password: "",
+//     randomToken: "sfwfx23rbkxg982ntxf81",
+//   },
+//   {
+//     phone: "778661262",
+//     password: "",
+//     randomToken: "sfwfx23rbkxg982ntxf82",
+//   },
+//   {
+//     phone: "778661263",
+//     password: "",
+//     randomToken: "sfwfx23rbkxg982ntxf83",
+//   },
+//   {
+//     phone: "778661264",
+//     password: "",
+//     randomToken: "sfwfx23rbkxg982ntxf84",
+//   },
+//   {
+// ];
+
+const createRandomUser = () => {
+  return {
+    phone: faker.phone.number({ style: "international" }),
+    password: faker.internet.password(),
+    randomToken: faker.internet.jwt(),
+  };
+};
+
+export const userData = faker.helpers.multiple(createRandomUser, {
+  count: 5,
+});
 
 async function main() {
-  await prisma.post.deleteMany();
+  logger.info(`Start seeding...`);
 
-  // Create a new user with a post
-  const user = await prisma.post.createMany({
-    data: FAKE_POSTS,
-  });
-  console.log("Created user:", user);
+  await prisma.user.deleteMany();
+  const salt = await bcrypt.genSalt(10);
 
-  // Fetch all users with their posts
-  const allUsers = await prisma.post.findMany();
-  console.log("All users:", JSON.stringify(allUsers, null, 2));
+  for (const user of userData) {
+    const hashedPassword = await bcrypt.hash(user.password, salt);
+
+    await prisma.user.create({
+      data: {
+        phone: user.phone,
+        password: hashedPassword,
+        randomToken: user.randomToken,
+      },
+    });
+  }
+
+  logger.info(`Seeding finished.`);
 }
 
 main()
   .then(async () => {
     await prisma.$disconnect();
   })
-  .catch(async (e) => {
-    console.error(e);
+  .catch(async (error) => {
+    logger.error("Error seeding: ", error);
     await prisma.$disconnect();
-    process.exit(1);
+    process.exit(1); // Exit with failure code
   });

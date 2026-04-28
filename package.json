@@ -9,16 +9,17 @@
     "build": "tsc",
     "db:push": "npx prisma db push",
     "db:generate": "npx prisma generate",
-    "db:seed": "npx prisma db seed",
     "db:studio": "npx prisma studio",
     "db:migrate": "npx prisma migrate dev",
-    "db:reset": "npx prisma migrate reset && npx prisma db seed"
+    "db:reset": "npx prisma migrate reset",
+    "db:seed": "ts-node prisma/seed.ts"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "@prisma/client": "^7.8.0",
     "bcrypt": "^6.0.0",
     "body-parser": "^2.2.2",
     "compression": "^1.8.1",
@@ -39,8 +40,8 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.30.1",
+    "@faker-js/faker": "^10.4.0",
     "@prisma/adapter-pg": "^7.7.0",
-    "@prisma/client": "^7.7.0",
     "@types/bcrypt": "^6.0.0",
     "@types/body-parser": "^1.19.6",
     "@types/compression": "^1.8.1",

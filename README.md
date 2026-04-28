@@ -22,19 +22,24 @@ A Repo for building REST APIs with **Express.js**, **TypeScript**, **Prisma ORM*
 ### Project Structure
 
 ```bash
+prisma/
+└── schema.prisma       # PostgreSQL models
 src/
-├── config/          # Queue, and storage configuration
-├── controllers/     # HTTP request/response handlers
-├── lib/             # Prisma configuration
-├── middlewares/     # asyncHandler, errorHandler, validateRequest, etc.
-├── models/          # PostgreSQL models and TypeScript interfaces
-├── routes/          # API route definitions
-├── types/           # Shared TypeScript type definitions
-├── utils/           # AppError, logger, response helpers
-├── validations/     # express-validator schemas
-├── app.ts           # Express app setup
-└── index.ts         # Server entry point
-```  
+├── config/             # errorCode, redis, and storage configuration
+├── controllers/        # HTTP request/response handlers
+├── jobs/               # BullMQ queue jobs and workers
+├── locals/             # i18n localization
+├── lib/                # Prisma configuration
+├── middlewares/        # asyncHandler, errorHandler, validateRequest, etc.
+├── routes/             # API route definitions
+├── services/           # Business logic layer 
+├── types/              # Shared TypeScript type definitions
+├── utils/              # AppError, logger, response helpers
+├── validators/         # express-validator schemas
+├── views/              # ejs views
+├── app.ts              # Express app setup
+└── index.ts            # Server entry point
+```
 
 ## Getting Started
 
@@ -50,6 +55,7 @@ cd your-repo-name
 ```bash
 npm install
 ```
+
 or
 
 ```bash
@@ -86,18 +92,21 @@ JWT_SECRET=
 ### 4. Set up Prisma and the database
 
 Generate Prisma client.
+
 ```bash
 # npx prisma generate
 npm run db:generate
 ```
 
 Run database migrations.
+
 ```bash
 # npx prisma migrate dev
 npm run db:migrate
 ```
 
 Open Prisma Studio.
+
 ```bash
 npm run db:studio
 ```
@@ -107,10 +116,9 @@ npm run db:studio
 ```bash
 npm run dev
 ```
+
 or
 
 ```bash
 pnpm dev
 ```
-
-

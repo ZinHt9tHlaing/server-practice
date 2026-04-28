@@ -4,7 +4,7 @@ import { prisma } from "./lib/prisma";
 import { logger } from "./utils/logger";
 
 const PORT = process.env.PORT || 8000;
-const startServer = async () => {
+const connectToDBAndStartServer = async () => {
   try {
     await prisma.$connect();
     logger.info("Prisma DB connected");
@@ -18,4 +18,4 @@ const startServer = async () => {
   }
 };
 
-startServer();
+connectToDBAndStartServer();
