@@ -11,10 +11,15 @@ import "dotenv/config";
 import { rateLimiter } from "./middlewares/rateLimiter";
 
 // import routes
-import routes from "./routes/indexRoute";
+import routes from "./routes/v1/indexRoute";
 import { errorHandler } from "./utils/errorHandler";
+import path from "node:path";
 
 export const app: Application = express();
+
+// view engine
+app.set("view engine", "ejs");
+app.set("views", "src/views"); // set the views directory
 
 app.use(cors());
 app
@@ -27,6 +32,10 @@ app
   .use(helmet()) // sets http headers to help prevent XSS, clickjacking, MIME type sniffing, and more
   .use(compression()) // compresses response bodies.
   .use(rateLimiter); // limits the number of requests from a single IP
+
+// static public Access ( File )
+app.use(express.static("public"));
+app.use(express.static("uploads"));
 
 // routes
 app.use(routes);
