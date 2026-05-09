@@ -7,13 +7,15 @@
     "start": "npx tsc -w",
     "dev": "npx nodemon",
     "build": "tsc",
+    "lint": "npx eslint .",
     "db:push": "npx prisma db push",
     "db:pull": "npx prisma db pull",
     "db:generate": "npx prisma generate",
     "db:studio": "npx prisma studio",
     "db:migrate": "npx prisma migrate dev",
     "db:reset": "npx prisma migrate reset",
-    "db:seed": "ts-node prisma/seed.ts"
+    "db:seed": "ts-node prisma/seed.ts",
+    "gen-secret": "openssl rand -base64 32"
   },
   "keywords": [],
   "author": "",
@@ -27,6 +29,7 @@
     "concurrently": "^9.2.1",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
+    "crypto": "^1.0.1",
     "ejs": "^5.0.2",
     "express": "^5.1.0",
     "express-rate-limit": "^8.4.0",
@@ -55,10 +58,10 @@
     "@types/multer": "^2.0.0",
     "@types/node": "^25.2.3",
     "@types/pg": "^8.16.0",
-    "@typescript-eslint/eslint-plugin": "^8.36.0",
-    "@typescript-eslint/parser": "^8.36.0",
+    "@typescript-eslint/eslint-plugin": "^8.59.2",
+    "@typescript-eslint/parser": "^8.59.2",
     "dotenv": "^17.2.0",
-    "eslint": "^9.30.1",
+    "eslint": "^9.39.4",
     "eslint-plugin-import": "^2.32.0",
     "eslint-plugin-n": "^17.21.0",
     "eslint-plugin-node": "^11.1.0",
@@ -71,6 +74,6 @@
     "tsconfig-paths": "^4.2.0",
     "tsx": "^4.21.0",
     "typescript": "^6.0.3",
-    "typescript-eslint": "^8.36.0"
+    "typescript-eslint": "^8.59.2"
   }
 }

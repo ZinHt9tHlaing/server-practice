@@ -1,4 +1,4 @@
-import express, { Application, NextFunction, Request, Response } from "express";
+import express, { Application } from "express";
 import bodyParser from "body-parser";
 import helmet from "helmet";
 import compression from "compression";
@@ -13,7 +13,6 @@ import { rateLimiter } from "./middlewares/rateLimiter";
 // import routes
 import routes from "./routes/v1/indexRoute";
 import { errorHandler } from "./utils/errorHandler";
-import path from "node:path";
 
 export const app: Application = express();
 

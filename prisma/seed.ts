@@ -1,4 +1,3 @@
-import { Prisma } from "../generated/prisma/client";
 import { prisma } from "../src/lib/prisma";
 import bcrypt from "bcrypt";
 import { logger } from "../src/utils/logger";
@@ -37,6 +36,7 @@ const createRandomUser = () => {
   return {
     phone: faker.phone.number({ style: "international" }),
     password: faker.internet.password(),
+    email: faker.internet.email(),
     randomToken: faker.internet.jwt(),
   };
 };
@@ -58,6 +58,7 @@ async function main() {
       data: {
         phone: user.phone,
         password: hashedPassword,
+        email: user.email,
         randomToken: user.randomToken,
       },
     });

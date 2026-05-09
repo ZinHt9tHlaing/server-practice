@@ -1,7 +1,13 @@
 import { Request, Response, NextFunction } from "express";
 
+type AppError = {
+  status: number;
+  message: string;
+  code: string;
+};
+
 export const errorHandler = async (
-  error: any,
+  error: AppError,
   req: Request,
   res: Response,
   next: NextFunction

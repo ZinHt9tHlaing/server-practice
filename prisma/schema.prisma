@@ -46,7 +46,7 @@ model Post {
   image      String
   authorId   String
   categoryId String
-  typeId     String
+  typeId     String 
   author     User     @relation(fields: [authorId], references: [id])
   category   Category @relation(fields: [categoryId], references: [id])
   type       Type     @relation(fields: [typeId], references: [id])
