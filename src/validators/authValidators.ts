@@ -28,12 +28,25 @@ export const verifyOtpValidator = [
     .withMessage("OTP must contain only numbers")
     .isLength({ min: 6, max: 6 })
     .withMessage("OTP must be 6 digits"),
-  body("token", "Invalid token")
-    .trim()
-    .notEmpty()
-    .escape(), // remove special characters
+  body("token", "Invalid token").trim().notEmpty().escape(), // remove special characters
 ];
 
-export const confirmPasswordValidator = [body("")];
+export const confirmPasswordValidator = [
+  body("phone", "Invalid phone number")
+    .trim()
+    .notEmpty()
+    .withMessage("Phone number is required")
+    .matches("^[0-9]+$")
+    .withMessage("Phone number must contain only numbers")
+    .isLength({ min: 5, max: 12 })
+    .withMessage("Phone number must be between 5 and 12 digits"),
+  body("password", "Password must be 8 digits")
+    .trim()
+    .notEmpty()
+    .withMessage("Password is required")
+    .isLength({ min: 8, max: 8 })
+    .withMessage("Phone number must be between 8 and 8 digits"),
+  body("token", "Invalid token").trim().notEmpty().escape(), // remove special characters
+];
 
 export const LoginValidator = [body("")];

@@ -2,8 +2,9 @@ import "dotenv/config";
 import { app } from "./app";
 import { prisma } from "./lib/prisma";
 import { logger } from "./utils/logger";
+import { ENV } from "./config/env";
 
-const PORT = process.env.PORT || 8000;
+const PORT = ENV.PORT || 8000;
 const connectToDBAndStartServer = async () => {
   try {
     await prisma.$connect();

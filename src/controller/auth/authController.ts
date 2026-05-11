@@ -4,9 +4,11 @@ import bcrypt from "bcrypt";
 import { errorCode } from "@/config/errorCode";
 import {
   createOtp,
+  createUser,
   getOtpByPhone,
   getUserByPhone,
   updateOtp,
+  updateUser,
 } from "@/services/authServices";
 import {
   checkOtpErrorIfSameDate,
@@ -14,9 +16,14 @@ import {
   checkUserExist,
 } from "@/utils/auth";
 import { createError } from "@/utils/error";
-import { generateToken } from "@/utils/generate";
+import {
+  generateAccessToken,
+  generateRefreshToken,
+  generateToken,
+} from "@/utils/generate";
 import { AppError } from "@/types/error-type";
 import moment from "moment";
+import { ENV } from "@/config/env";
 
 export const register = async (
   req: Request,
@@ -119,14 +126,13 @@ export const verifyOtp = async (
 
   // if OTP request is in the same date and over limit
   checkOtpErrorIfSameDate(isSameDate, otpRow!.error);
-  let result;
 
   // Token is wrong
   if (otpRow?.rememberToken !== token) {
     const otpData = {
       error: 5,
     };
-    result = await updateOtp(otpRow!.id, otpData);
+    await updateOtp(otpRow!.id, otpData);
 
     const error: AppError = new Error("Invalid Token");
     error.status = 400;
@@ -173,7 +179,7 @@ export const verifyOtp = async (
     error: 0,
     count: 1,
   };
-  result = await updateOtp(otpRow!.id, otpData);
+  const result = await updateOtp(otpRow!.id, otpData);
 
   res.status(200).json({
     message: "OTP is successfully verified.",
@@ -182,12 +188,94 @@ export const verifyOtp = async (
   });
 };
 
+// Sending OTP --> Verify OTP --> Confirm Password = New Account
 export const confirmPassword = async (
   req: Request,
   res: Response,
   next: NextFunction
 ) => {
   const { phone, password, token } = req.body;
+
+  const user = await getUserByPhone(phone);
+  checkUserExist(user);
+
+  const otpRow = await getOtpByPhone(phone);
+  checkOtpRow(otpRow);
+
+  // OTP error count is over limit
+  if (otpRow?.error === 5) {
+    const error: AppError = new Error("This request may be an attack!");
+    error.status = 400;
+    error.code = errorCode.attack;
+    return next(error);
+  }
+
+  // Token is wrong
+  if (otpRow?.verifyToken !== token) {
+    const otpData = {
+      error: 5,
+    };
+    await updateOtp(otpRow!.id, otpData);
+
+    const error: AppError = new Error("Invalid Token");
+    error.status = 400;
+    error.code = errorCode.invalid;
+    return next(error);
+  }
+
+  // request is expired
+  const isExpired = moment().diff(moment(otpRow?.updatedAt), "minutes") > 2; // 2 minutes
+  if (isExpired) {
+    const error: AppError = new Error(
+      "Your request is expired. Please try again!"
+    );
+    error.status = 403;
+    error.code = errorCode.otpExpired;
+    return next(error);
+  }
+
+  const salt = await bcrypt.genSalt(10);
+  const hashedPassword = await bcrypt.hash(password, salt);
+  const randomToken = "I will replace Refresh Token soon.";
+
+  const userData = {
+    phone,
+    password: hashedPassword,
+    randomToken,
+  };
+  const newUser = await createUser(userData);
+
+  // Generate access and refresh token
+  const accessToken = generateAccessToken(newUser.id);
+  const refreshToken = generateRefreshToken(newUser.id, newUser.phone);
+
+  // Updating randomToken with refreshToken
+  const userUpdateData = {
+    randomToken: refreshToken,
+  };
+
+  await updateUser(newUser.id, userUpdateData);
+
+  res
+    .status(201)
+    .cookie("accessToken", accessToken, {
+      httpOnly: true,
+      secure: ENV.NODE_ENV === "production",
+      sameSite: ENV.NODE_ENV === "production" ? "none" : "strict",
+      maxAge: 15 * 60 * 1000, // 15 minutes
+      path: "/",
+    })
+    .cookie("refreshToken", refreshToken, {
+      httpOnly: true,
+      secure: ENV.NODE_ENV === "production",
+      sameSite: ENV.NODE_ENV === "production" ? "none" : "strict",
+      maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
+      path: "/",
+    })
+    .json({
+      message: "Your account is successfully created.",
+      userId: newUser.id,
+    });
 };
 
 export const login = (req: Request, res: Response, next: NextFunction) => {
