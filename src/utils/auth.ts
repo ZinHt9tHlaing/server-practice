@@ -14,6 +14,15 @@ export const checkUserExist = (user: Prisma.UserModel | null) => {
   }
 };
 
+export const checkUserIfNotExist = (user: Prisma.UserModel | null) => {
+  if (!user) {
+    const error: AppError = new Error("This phone has not registered.");
+    error.status = 401;
+    error.code = errorCode.unauthenticated;
+    throw error;
+  }
+};
+
 export const checkOtpErrorIfSameDate = (
   isSameDate: boolean,
   errorCount: number

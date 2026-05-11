@@ -7,6 +7,7 @@ import {
 import { validationRequest } from "@/middlewares/validationRequest";
 import {
   confirmPasswordValidator,
+  loginValidator,
   registerValidator,
   verifyOtpValidator,
 } from "@/validators/authValidators";
@@ -22,6 +23,6 @@ authRoute.post(
   validationRequest,
   confirmPassword
 );
-authRoute.post("/login", login);
+authRoute.post("/login", loginValidator, validationRequest, login);
 
 export default authRoute;

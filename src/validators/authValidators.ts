@@ -44,9 +44,22 @@ export const confirmPasswordValidator = [
     .trim()
     .notEmpty()
     .withMessage("Password is required")
-    .isLength({ min: 8, max: 8 })
-    .withMessage("Phone number must be between 8 and 8 digits"),
+    .isLength({ min: 8, max: 8 }),
   body("token", "Invalid token").trim().notEmpty().escape(), // remove special characters
 ];
 
-export const LoginValidator = [body("")];
+export const loginValidator = [
+  body("phone", "Invalid phone number")
+    .trim()
+    .notEmpty()
+    .withMessage("Phone number is required")
+    .matches("^[0-9]+$")
+    .withMessage("Phone number must contain only numbers")
+    .isLength({ min: 5, max: 12 })
+    .withMessage("Phone number must be between 5 and 12 digits"),
+  body("password", "Password must be 8 digits")
+    .trim()
+    .notEmpty()
+    .withMessage("Password is required")
+    .isLength({ min: 8, max: 8 })
+];

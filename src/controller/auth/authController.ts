@@ -14,8 +14,8 @@ import {
   checkOtpErrorIfSameDate,
   checkOtpRow,
   checkUserExist,
+  checkUserIfNotExist,
 } from "@/utils/auth";
-import { createError } from "@/utils/error";
 import {
   generateAccessToken,
   generateRefreshToken,
@@ -238,6 +238,7 @@ export const confirmPassword = async (
   const hashedPassword = await bcrypt.hash(password, salt);
   const randomToken = "I will replace Refresh Token soon.";
 
+  // Create a new account
   const userData = {
     phone,
     password: hashedPassword,
@@ -278,18 +279,100 @@ export const confirmPassword = async (
     });
 };
 
-export const login = (req: Request, res: Response, next: NextFunction) => {
-  const { phone, password } = req.body;
-
-  if (phone) {
-    return next(
-      createError(
-        "User already exists with this phone address!",
-        400,
-        errorCode.userExist
-      )
-    );
+export const login = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  const password = req.body.password;
+  let phone: string = req.body.phone;
+  if (phone.slice(0, 2) === "09") {
+    phone = phone.substring(2, phone.length);
   }
 
-  res.status(200).json({ message: "Login successful" });
+  // Check if user doesn't exist
+  const user = await getUserByPhone(phone);
+  checkUserIfNotExist(user);
+
+  // wrong password is over limit
+  if (user?.status === "FREEZE") {
+    const error: AppError = new Error(
+      "Your account is temporarily locked. Please contact us!"
+    );
+    error.status = 401;
+    error.code = errorCode.accountFreeze;
+    return next(error);
+  }
+
+  const isMatchPassword = await bcrypt.compare(password, user!.password);
+  if (!isMatchPassword) {
+    // --------- Starting to record wrong times
+    const lastRequest = new Date(user!.updatedAt).toLocaleDateString();
+    const isSameDate = lastRequest === new Date().toLocaleDateString();
+
+    // Today password is wrong first time
+    if (!isSameDate) {
+      const userData = {
+        errorLoginCount: 1,
+      };
+      await updateUser(user!.id, userData);
+    } else {
+      // Today password was wrong 2 times
+      if (user!.errorLoginCount >= 2) {
+        const userData = {
+          status: "FREEZE" as const,
+        };
+        await updateUser(user!.id, userData);
+      } else {
+        // Today password was wrong 1 times
+        const userData = {
+          errorLoginCount: {
+            increment: 1,
+          },
+        };
+        await updateUser(user!.id, userData);
+      }
+    }
+
+    // --------- Ending -----------------------
+    const error: AppError = new Error(
+      "Password is incorrect. If you enter wrong password 3 times, your account will be temporarily locked."
+    );
+    error.status = 401;
+    error.code = errorCode.invalid;
+    return next(error);
+  }
+
+  // Generate access and refresh token
+  const accessToken = generateAccessToken(user!.id);
+  const refreshToken = generateRefreshToken(user!.id, user!.phone);
+
+  // Update randomToken with refreshToken
+  const userData = {
+    errorLoginCount: 0, // reset error count
+    randomToken: refreshToken,
+  };
+
+  await updateUser(user!.id, userData);
+
+  res
+    .status(200)
+    .cookie("accessToken", accessToken, {
+      httpOnly: true,
+      secure: ENV.NODE_ENV === "production",
+      sameSite: ENV.NODE_ENV === "production" ? "none" : "strict",
+      maxAge: 15 * 60 * 1000, // 15 minutes
+      path: "/",
+    })
+    .cookie("refreshToken", refreshToken, {
+      httpOnly: true,
+      secure: ENV.NODE_ENV === "production",
+      sameSite: ENV.NODE_ENV === "production" ? "none" : "strict",
+      maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
+      path: "/",
+    })
+    .json({
+      message: "Successfully Logged In.",
+      userId: user?.id,
+    });
 };
