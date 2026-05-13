@@ -1,6 +1,7 @@
 import {
   confirmPassword,
   login,
+  logout,
   register,
   verifyOtp,
 } from "@/controller/auth/authController";
@@ -13,16 +14,17 @@ import {
 } from "@/validators/authValidators";
 import express from "express";
 
-const authRoute = express.Router();
+const router = express.Router();
 
-authRoute.post("/register", registerValidator, validationRequest, register);
-authRoute.post("/verify-otp", verifyOtpValidator, validationRequest, verifyOtp);
-authRoute.post(
+router.post("/register", registerValidator, validationRequest, register);
+router.post("/verify-otp", verifyOtpValidator, validationRequest, verifyOtp);
+router.post(
   "/confirm-password",
   confirmPasswordValidator,
   validationRequest,
   confirmPassword
 );
-authRoute.post("/login", loginValidator, validationRequest, login);
+router.post("/login", loginValidator, validationRequest, login);
+router.post("/logout", logout);
 
-export default authRoute;
+export default router;

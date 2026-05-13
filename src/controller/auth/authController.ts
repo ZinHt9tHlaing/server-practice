@@ -6,6 +6,7 @@ import {
   createOtp,
   createUser,
   getOtpByPhone,
+  getUserById,
   getUserByPhone,
   updateOtp,
   updateUser,
@@ -24,6 +25,8 @@ import {
 import { AppError } from "@/types/error-type";
 import moment from "moment";
 import { ENV } from "@/config/env";
+import { CustomRequest } from "@/types/custom-type";
+import jwt from "jsonwebtoken";
 
 export const register = async (
   req: Request,
@@ -375,4 +378,63 @@ export const login = async (
       message: "Successfully Logged In.",
       userId: user?.id,
     });
+};
+
+export const logout = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  const refreshToken = req.cookies ? req.cookies.refreshToken : null;
+  if (!refreshToken) {
+    const error: AppError = new Error("You are not an authenticated use!");
+    error.status = 401;
+    error.code = errorCode.unauthenticated;
+    return next(error);
+  }
+
+  let decoded;
+  try {
+    decoded = jwt.verify(refreshToken, ENV.REFRESH_TOKEN_SECRET!) as {
+      id: string;
+      phone: string;
+    };
+  } catch (err) {
+    const error: AppError = new Error("You are not an authenticated use!");
+    error.status = 401;
+    error.code = errorCode.unauthenticated;
+    return next(error);
+  }
+
+  const user = await getUserById(decoded.id);
+  checkUserIfNotExist(user);
+
+  if (user?.phone !== decoded.phone) {
+    const error: AppError = new Error("You are not an authenticated use!");
+    error.status = 401;
+    error.code = errorCode.unauthenticated;
+    return next(error);
+  }
+
+  // Update randomToken
+  const userData = {
+    randomToken: generateToken(),
+  };
+  await updateUser(user!.id, userData);
+
+  res.clearCookie("accessToken", {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
+    path: "/",
+  });
+
+  res.clearCookie("refreshToken", {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
+    path: "/",
+  });
+
+  return res.status(200).json({ message: "Successfully Logged Out." });
 };
