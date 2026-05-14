@@ -7,6 +7,10 @@ import cookieParser from "cookie-parser";
 import cors, { CorsOptions } from "cors";
 import "dotenv/config";
 
+// import localization
+import i18next from "./config/i18n";
+import i18nextMiddleware from "i18next-http-middleware";
+
 // import custom middleware
 import { rateLimiter } from "./middlewares/rateLimiter";
 
@@ -55,7 +59,8 @@ app
   .use(cors(corsOptions))
   .use(helmet()) // sets http headers to help prevent XSS, clickjacking, MIME type sniffing, and more
   .use(compression()) // compresses response bodies.
-  .use(rateLimiter); // limits the number of requests from a single IP
+  .use(rateLimiter) // limits the number of requests from a single IP
+  .use(i18nextMiddleware.handle(i18next)); // localization middleware
 
 // static public Access ( File )
 app.use(express.static("public"));
