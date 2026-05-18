@@ -18,6 +18,7 @@ import { rateLimiter } from "./middlewares/rateLimiter";
 import routes from "./routes/v1/indexRoute";
 import { errorHandler } from "./utils/errorHandler";
 import { ENV } from "./config/env";
+import { startCronJobs } from "./jobs/cron";
 
 export const app: Application = express();
 
@@ -71,3 +72,6 @@ app.use(routes);
 
 // error handler
 app.use(errorHandler);
+
+// cron jobs
+startCronJobs();
