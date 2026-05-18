@@ -1,9 +1,9 @@
 import { Response, NextFunction } from "express";
 import { CustomRequest } from "@/types/custom-type";
 import { getUserById } from "@/services/authServices";
-import { AppError } from "@/types/error-type";
 import { errorCode } from "@/config/errorCode";
 import { Role } from "../../generated/prisma/enums";
+import { createError } from "@/utils/error";
 
 // authorize( true, "ADMIN", "AUTHOR" ) => deny - "USER"
 // authorize( false, "USER" ) => allow - "ADMIN", "AUTHOR"
@@ -14,27 +14,28 @@ export const authorize = (permission: boolean, ...roles: Role[]) => {
 
     const user = await getUserById(userId!);
     if (!user) {
-      const error: AppError = new Error("This account has not registered!");
-      error.status = 401;
-      error.code = errorCode.unauthenticated;
-      return next(error);
+      return next(
+        createError(
+          "You are not an authenticated user!",
+          401,
+          errorCode.unauthenticated
+        )
+      );
     }
 
     const result = roles.includes(user.role);
     // if permission is true and result is false
     if (permission && !result) {
-      const error: AppError = new Error("This action is not allowed!");
-      error.status = 403;
-      error.code = errorCode.unauthorized;
-      return next(error);
+      return next(
+        createError("This action is not allowed!", 403, errorCode.unauthorized)
+      );
     }
 
     // if permission is false and result is true
     if (!permission && result) {
-      const error: AppError = new Error("This action is not allowed!");
-      error.status = 403;
-      error.code = errorCode.unauthorized;
-      return next(error);
+      return next(
+        createError("This action is not allowed!", 403, errorCode.unauthorized)
+      );
     }
 
     req.user = user;

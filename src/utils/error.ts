@@ -1,7 +1,4 @@
-type AppError = Error & {
-  status?: number;
-  code?: string;
-};
+import { AppError } from "@/types/error-type";
 
 export const createError = (
   message: string,

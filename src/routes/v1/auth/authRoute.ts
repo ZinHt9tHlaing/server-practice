@@ -1,15 +1,21 @@
 import {
   confirmPassword,
+  forgetPassword,
   login,
   logout,
   register,
+  resetPassword,
   verifyOtp,
+  verifyOtpForPassword,
 } from "@/controller/auth/authController";
 import { validationRequest } from "@/middlewares/validationRequest";
 import {
   confirmPasswordValidator,
+  forgetPasswordValidator,
   loginValidator,
   registerValidator,
+  resetPasswordValidator,
+  verifyOtpForPasswordValidator,
   verifyOtpValidator,
 } from "@/validators/authValidators";
 import express from "express";
@@ -26,5 +32,24 @@ router.post(
 );
 router.post("/login", loginValidator, validationRequest, login);
 router.post("/logout", logout);
+
+router.post(
+  "/forget-password",
+  forgetPasswordValidator,
+  validationRequest,
+  forgetPassword
+);
+router.post(
+  "/verify-password",
+  verifyOtpForPasswordValidator,
+  validationRequest,
+  verifyOtpForPassword
+);
+router.post(
+  "/reset-password",
+  resetPasswordValidator,
+  validationRequest,
+  resetPassword
+);
 
 export default router;

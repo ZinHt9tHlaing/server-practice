@@ -61,5 +61,47 @@ export const loginValidator = [
     .trim()
     .notEmpty()
     .withMessage("Password is required")
-    .isLength({ min: 8, max: 8 })
+    .isLength({ min: 8, max: 8 }),
+];
+
+export const forgetPasswordValidator = [
+  body("phone", "Invalid phone number")
+    .trim()
+    .notEmpty()
+    .withMessage("Phone number is required")
+    .matches("^[0-9]+$")
+    .withMessage("Phone number must contain only numbers")
+    .isLength({ min: 5, max: 12 })
+    .withMessage("Phone number must be between 5 and 12 digits"),
+];
+
+export const verifyOtpForPasswordValidator = [
+  body("phone", "Invalid phone number")
+    .trim()
+    .notEmpty()
+    .matches("^[0-9]+$")
+    .isLength({ min: 5, max: 12 }),
+  body("otp", "Invalid OTP")
+    .trim()
+    .notEmpty()
+    .matches("^[0-9]+$")
+    .isLength({ min: 6, max: 6 }),
+  body("token", "Invalid token").trim().notEmpty().escape(),
+];
+
+export const resetPasswordValidator = [
+  body("phone", "Invalid phone number")
+    .trim()
+    .notEmpty()
+    .withMessage("Phone number is required")
+    .matches("^[0-9]+$")
+    .withMessage("Phone number must contain only numbers")
+    .isLength({ min: 5, max: 12 })
+    .withMessage("Phone number must be between 5 and 12 digits"),
+  body("password", "Password must be 8 digits")
+    .trim()
+    .notEmpty()
+    .withMessage("Password is required")
+    .isLength({ min: 8, max: 8 }),
+  body("token", "Invalid token").trim().notEmpty().escape(), // remove special characters
 ];

@@ -1,11 +1,11 @@
 import { Response, NextFunction } from "express";
 import { CustomRequest } from "@/types/custom-type";
 import { errorCode } from "@/config/errorCode";
-import { AppError } from "@/types/error-type";
 import jwt from "jsonwebtoken";
 import { ENV } from "../config/env";
 import { getUserById, updateUser } from "@/services/authServices";
 import { generateAccessToken, generateRefreshToken } from "@/utils/generate";
+import { createError } from "@/utils/error";
 
 interface ErrorTypes extends Error {
   name: string;
@@ -40,10 +40,13 @@ export const authMiddleware = async (
   const refreshToken = req.cookies ? req.cookies.refreshToken : null;
 
   if (!refreshToken) {
-    const error: AppError = new Error("You are not an authenticated user!");
-    error.status = 401;
-    error.code = errorCode.unauthenticated;
-    return next(error);
+    return next(
+      createError(
+        "You are not an authenticated user!",
+        401,
+        errorCode.unauthenticated
+      )
+    );
   }
 
   // Generate new tokens
@@ -55,33 +58,45 @@ export const authMiddleware = async (
         phone: string;
       };
     } catch (err) {
-      const error: AppError = new Error("You are not an authenticated user!");
-      error.status = 401;
-      error.code = errorCode.unauthenticated;
-      return next(error);
+      return next(
+        createError(
+          "You are not an authenticated user!",
+          401,
+          errorCode.unauthenticated
+        )
+      );
     }
 
     const user = await getUserById(decoded.id);
     if (!user) {
-      const error: AppError = new Error("You are not an authenticated user!");
-      error.status = 401;
-      error.code = errorCode.unauthenticated;
-      return next(error);
+      return next(
+        createError(
+          "You are not an authenticated user!",
+          401,
+          errorCode.unauthenticated
+        )
+      );
     }
 
     if (user.phone !== decoded.phone) {
-      const error: AppError = new Error("This account has not registered!");
-      error.status = 401;
-      error.code = errorCode.unauthenticated;
-      return next(error);
+      return next(
+        createError(
+          "This account has not registered!",
+          401,
+          errorCode.unauthenticated
+        )
+      );
     }
 
     // Check if refresh token is valid
     if (user.randomToken !== refreshToken) {
-      const error: AppError = new Error("You are not an authenticated user!");
-      error.status = 401;
-      error.code = errorCode.unauthenticated;
-      return next(error);
+      return next(
+        createError(
+          "You are not an authenticated user!",
+          401,
+          errorCode.unauthenticated
+        )
+      );
     }
 
     // Generate new access and refresh token for authorized user
@@ -115,7 +130,7 @@ export const authMiddleware = async (
   };
 
   if (!accessToken) {
-    generateNewTokens();
+    generateNewTokens(); // await generateNewTokens();
     // const error: AppError = new Error("Access Token has expired!");
     // error.status = 401;
     // error.code = errorCode.accessTokenExpired;
@@ -135,7 +150,7 @@ export const authMiddleware = async (
 
       // If access token is expired, generate new tokens using refresh token
       if (err.name === "TokenExpiredError") {
-        generateNewTokens();
+        generateNewTokens(); // await generateNewTokens();
         // err.message = "Access Token has expired. Please log in again.";
         // err.status = 401;
         // err.code = errorCode.accessTokenExpired;
