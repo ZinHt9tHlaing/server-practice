@@ -14,6 +14,17 @@ import { authorize } from "@/middlewares/authorizeMiddleware";
 
 const router = express.Router();
 
+// router.use("/api/v1", maintenance, authRoute);
+// router.use(
+//   "/api/v1/admin",
+//   maintenance,
+//   authMiddleware,
+//   authorize(true, "ADMIN"),
+//   adminUserRoute
+// );
+// router.use("/api/v1/user", maintenance, userApiRoute);
+
+// no need maintenance middleware
 router.use("/api/v1", authRoute);
 router.use(
   "/api/v1/admin",
