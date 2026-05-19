@@ -10,4 +10,6 @@ export const errorCode = {
   accountFreeze: "Error_AccountFreeze",
   unauthorized: "Error_Unauthorized",
   maintenance: "Error_Maintenance",
+  noImageUploaded: "Error_NoImageUploaded", // upload errors
+  failedToDeleteLocalFile: "Error_FailedToDeleteLocalFile", // upload errors
 };

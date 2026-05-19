@@ -45,5 +45,6 @@ export const updateUser = async (
 export const getUserById = async (id: string) => {
   return prisma.user.findUnique({
     where: { id },
+    include: { image: true },
   });
 };

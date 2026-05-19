@@ -41,5 +41,9 @@ DS_Store
 # vercel
 .vercel
 
+# prisma
 /generated/prisma
 /generated/prisma
+
+# uploads
+uploads/images/*

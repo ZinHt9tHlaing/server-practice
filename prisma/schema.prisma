@@ -39,20 +39,28 @@ model Type {
 }
 
 model Post {
-  id         String   @id @default(uuid())
-  title      String   @db.VarChar(255)
+  id         String     @id @default(uuid())
+  title      String     @db.VarChar(255)
   content    String
   body       String
-  image      String
+  image      PostImage?
   authorId   String
   categoryId String
   typeId     String
-  author     User     @relation(fields: [authorId], references: [id])
-  category   Category @relation(fields: [categoryId], references: [id])
-  type       Type     @relation(fields: [typeId], references: [id])
+  author     User       @relation(fields: [authorId], references: [id])
+  category   Category   @relation(fields: [categoryId], references: [id])
+  type       Type       @relation(fields: [typeId], references: [id])
   tags       Tag[]
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+}
+
+model PostImage {
+  id       String @id @default(cuid())
+  imageUrl String @db.VarChar(255)
+  publicId String @db.VarChar(255)
+  postId   String @unique
+  post     Post   @relation(fields: [postId], references: [id], onDelete: Cascade)
 }
 
 model Product {
@@ -69,41 +77,50 @@ model Product {
   category    Category           @relation(fields: [categoryId], references: [id])
   type        Type               @relation(fields: [typeId], references: [id])
   orders      ProductsOnOrders[]
-  images      Image[]
+  images      ProductImage[]
   tags        Tag[]
   users       User[]
   createdAt   DateTime           @default(now())
   updatedAt   DateTime           @updatedAt
 }
 
-model Image {
+model ProductImage {
   id        String  @id @default(cuid())
-  path      String  @db.VarChar(255)
+  imageUrl  String  @db.VarChar(255)
+  publicId  String  @db.VarChar(255)
   productId String
   product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
 }
 
 model User {
-  id                 String    @id @default(cuid())
-  firstName          String?   @db.VarChar(52)
-  lastName           String?   @db.VarChar(52)
-  phone              String    @unique @db.VarChar(15)
+  id                 String     @id @default(cuid())
+  firstName          String?    @db.VarChar(52)
+  lastName           String?    @db.VarChar(52)
+  phone              String     @unique @db.VarChar(15)
   password           String
-  email              String?   @unique @db.VarChar(52)
-  role               Role      @default(USER)
-  status             Status    @default(ACTIVE)
+  email              String?    @unique @db.VarChar(52)
+  role               Role       @default(USER)
+  status             Status     @default(ACTIVE)
   lastLogin          DateTime?
-  errorLoginCount    Int       @default(0) @db.SmallInt
+  errorLoginCount    Int        @default(0) @db.SmallInt
   randomToken        String
-  image              String?
+  image              UserImage?
   posts              Post[]
   orders             Order[]
   products           Product[]
   lastChangePassword DateTime?
-  createdAt          DateTime  @default(now())
-  updatedAt          DateTime  @updatedAt
+  createdAt          DateTime   @default(now())
+  updatedAt          DateTime   @updatedAt
 
   // @@map("users") // set this table name
+}
+
+model UserImage {
+  id       String @id @default(cuid())
+  imageUrl String @db.VarChar(255)
+  publicId String @db.VarChar(255)
+  userId   String @unique
+  user     User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 // model PostTag {
