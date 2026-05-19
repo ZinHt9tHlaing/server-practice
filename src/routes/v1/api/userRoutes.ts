@@ -1,5 +1,9 @@
 import express from "express";
-import { changeLanguage, uploadProfile } from "@/controller/api/userController";
+import {
+  changeLanguage,
+  getMyPhoto,
+  uploadProfile,
+} from "@/controller/api/userController";
 import { changeLanguageValidator } from "@/validators/userValidators";
 import { validationRequest } from "@/middlewares/validationRequest";
 import { textPermission } from "@/controller/admin/userController";
@@ -21,5 +25,7 @@ router.patch(
   uploadFile.single("avatar"),
   uploadProfile
 );
+
+// router.get("/profile/my-photo", getMyPhoto); // Just for testing
 
 export default router;

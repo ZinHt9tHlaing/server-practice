@@ -1,5 +1,6 @@
 import { NextFunction, Response } from "express";
 import fs from "node:fs/promises";
+import path from "node:path";
 import { deleteImage, uploadSingleImage } from "@/config/cloudinary";
 import { errorCode } from "@/config/errorCode";
 import { CustomRequest } from "@/types/custom-type";
@@ -30,7 +31,7 @@ export const uploadProfile = async (
 
   // const filePath = path.join(
   //   __dirname,
-  //   "../../../",
+  //   "../../..",
   //   "/uploads/images",
   //   image.path
   // );
@@ -95,5 +96,22 @@ export const uploadProfile = async (
     message: "Profile image uploaded successfully",
     imageUrl: result?.image_url,
     public_id: result?.public_id,
+  });
+};
+
+// Just for testing
+export const getMyPhoto = (req: Request, res: Response): void => {
+  const filePath = path.join(
+    __dirname,
+    "../../..",
+    "uploads",
+    "images",
+    "1779176926027-179866275.jpeg"
+  );
+
+  res.sendFile(filePath, (err) => {
+    if (err) {
+      res.status(404).send("File not found");
+    }
   });
 };
