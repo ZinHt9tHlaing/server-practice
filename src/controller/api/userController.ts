@@ -99,6 +99,30 @@ export const uploadProfile = async (
   });
 };
 
+export const uploadProfileMultiple = async (
+  req: CustomRequest,
+  res: Response
+) => {
+  const files = req.files as Express.Multer.File[];
+  console.log("req.files -------", files);
+
+  const total = files.length;
+
+  await Promise.all(
+    files.map((file) =>
+      fs.unlink(file.path).catch((error) => {
+        console.error(`Error deleting ${file.path}:`, error);
+      })
+    )
+  );
+
+  res.status(200).json({
+    message: "Multiple Profile pictures uploaded successfully.",
+    total,
+    files: req.files,
+  });
+};
+
 // Just for testing
 export const getMyPhoto = (req: Request, res: Response): void => {
   const filePath = path.join(

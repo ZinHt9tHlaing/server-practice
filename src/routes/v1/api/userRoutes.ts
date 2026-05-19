@@ -1,8 +1,8 @@
 import express from "express";
 import {
   changeLanguage,
-  getMyPhoto,
   uploadProfile,
+  uploadProfileMultiple,
 } from "@/controller/api/userController";
 import { changeLanguageValidator } from "@/validators/userValidators";
 import { validationRequest } from "@/middlewares/validationRequest";
@@ -24,6 +24,12 @@ router.patch(
   authMiddleware,
   uploadFile.single("avatar"),
   uploadProfile
+);
+router.patch(
+  "/profile/upload/multiple",
+  authMiddleware,
+  uploadFile.array("avatar"),
+  uploadProfileMultiple
 );
 
 // router.get("/profile/my-photo", getMyPhoto); // Just for testing
