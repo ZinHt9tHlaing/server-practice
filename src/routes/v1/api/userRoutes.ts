@@ -1,6 +1,7 @@
 import express from "express";
 import {
   changeLanguage,
+  getMyPhoto,
   uploadProfile,
   uploadProfileMultiple,
   uploadProfileOptimize,
@@ -40,6 +41,6 @@ router.patch(
   uploadProfileMultiple
 );
 
-// router.get("/profile/my-photo", getMyPhoto); // Just for testing
+router.get("/profile/my-photo", authMiddleware, getMyPhoto); // Just for testing
 
 export default router;

@@ -1,6 +1,6 @@
 import { NextFunction, Response } from "express";
 import fs from "node:fs/promises";
-import path from "node:path";
+// import path from "node:path";
 
 import { uploadFileImageToCloud } from "@/config/cloudinary/uploadFileImageToCloud";
 import { errorCode } from "@/config/errorCode";
@@ -9,9 +9,8 @@ import { createError } from "@/utils/error";
 import { getUserById, updateUser } from "@/services/authServices";
 import { checkUserIfNotExist } from "@/utils/auth";
 import { checkUploadFile } from "@/utils/check";
-import { optimizedImage } from "@/utils/optimizeImage";
 import { deleteImage } from "@/config/cloudinary/deleteImage";
-import { uploadBufferImageToCloud } from "@/config/cloudinary/uploadBufferImageToCloud";
+import ImageQueue from "@/jobs/queues/imageQueue";
 
 export const changeLanguage = async (req: CustomRequest, res: Response) => {
   const { lng } = req.query;
@@ -122,61 +121,32 @@ export const uploadProfileOptimize = async (
 
   const fileName = Date.now() + "-" + `${Math.round(Math.random() * 1e9)}`;
 
-  let result;
+  let job;
   try {
-    // Optimize image before upload to cloudinary
-    const optimized = await optimizedImage(image.buffer);
-    if (!optimized) {
-      return next(
-        createError(
-          "Failed to optimize image",
-          500,
-          errorCode.imageOptimizedFailed
-        )
-      );
-    }
-
-    // upload to cloudinary
-    result = await uploadBufferImageToCloud(
-      optimized,
-      "eShop.com/profile/optimize",
+    job = await ImageQueue.add("optimize-image", {
+      userId,
+      source: {
+        type: "buffer",
+        data: image.buffer.toString("base64"), // convert buffer to base64 string coz queue job doesn't support buffer
+      },
       fileName,
-      "webp"
-    );
-
-    if (result) {
-      const userData = {
-        image: {
-          upsert: {
-            create: {
-              imageUrl: result.image_url,
-              publicId: result.public_id,
-            },
-            update: {
-              imageUrl: result.image_url,
-              publicId: result.public_id,
-            },
-          },
-        },
-      };
-
-      await updateUser(user!.id, userData);
-    }
+    });
   } catch (error) {
-    console.error("Error uploading image to cloudinary:", error);
+    console.error("Error queueing image job:", error);
     return next(
       createError(
-        "Failed to upload image to cloudinary",
+        "Failed to queue image job",
         500,
-        errorCode.noImageUploaded
+        errorCode.imageOptimizedFailed
       )
     );
   }
 
   res.status(200).json({
     message: "Profile picture uploaded successfully.",
-    imageUrl: result?.image_url,
-    public_id: result?.public_id,
+    // imageUrl: result?.image_url,
+    // public_id: result?.public_id,
+    jobId: job.id,
   });
 };
 
@@ -205,18 +175,37 @@ export const uploadProfileMultiple = async (
 };
 
 // Just for testing
-export const getMyPhoto = (req: Request, res: Response): void => {
-  const filePath = path.join(
-    __dirname,
-    "../../..",
-    "uploads",
-    "images",
-    "1779176926027-179866275.jpeg"
-  );
+export const getMyPhoto = async (
+  req: CustomRequest,
+  res: Response,
+  next: NextFunction
+) => {
+  // const filePath = path.join(
+  //   __dirname,
+  //   "../../..",
+  //   "uploads",
+  //   "images",
+  //   "1779176926027-179866275.jpeg"
+  // );
 
-  res.sendFile(filePath, (err) => {
-    if (err) {
-      res.status(404).send("File not found");
-    }
+  // res.sendFile(filePath, (err) => {
+  //   if (err) {
+  //     res.status(404).send("File not found");
+  //   }
+  // });
+
+  const userId = req.userId;
+  const user = await getUserById(userId as string);
+  checkUserIfNotExist(user);
+  if (!user?.image?.imageUrl) {
+    return next(
+      createError("No image uploaded", 404, errorCode.noImageUploaded)
+    );
+  }
+
+  res.status(200).json({
+    message: "Your profile picture",
+    imageUrl: user?.image?.imageUrl,
+    public_id: user?.image?.publicId,
   });
 };
