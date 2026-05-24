@@ -3,12 +3,14 @@ import {
   changeLanguage,
   uploadProfile,
   uploadProfileMultiple,
+  uploadProfileOptimize,
 } from "@/controller/api/userController";
 import { changeLanguageValidator } from "@/validators/userValidators";
 import { validationRequest } from "@/middlewares/validationRequest";
 import { textPermission } from "@/controller/admin/userController";
 import { authMiddleware } from "@/middlewares/authMiddleware";
 import uploadFile from "@/middlewares/uploadFile";
+import uploadMemory from "@/middlewares/uploadMemory";
 
 const router = express.Router();
 
@@ -24,6 +26,12 @@ router.patch(
   authMiddleware,
   uploadFile.single("avatar"),
   uploadProfile
+);
+router.patch(
+  "/profile/upload/optimize",
+  authMiddleware,
+  uploadMemory.single("avatar"),
+  uploadProfileOptimize
 );
 router.patch(
   "/profile/upload/multiple",

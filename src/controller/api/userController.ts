@@ -1,13 +1,17 @@
 import { NextFunction, Response } from "express";
 import fs from "node:fs/promises";
 import path from "node:path";
-import { deleteImage, uploadSingleImage } from "@/config/cloudinary";
+
+import { uploadFileImageToCloud } from "@/config/cloudinary/uploadFileImageToCloud";
 import { errorCode } from "@/config/errorCode";
 import { CustomRequest } from "@/types/custom-type";
 import { createError } from "@/utils/error";
 import { getUserById, updateUser } from "@/services/authServices";
 import { checkUserIfNotExist } from "@/utils/auth";
 import { checkUploadFile } from "@/utils/check";
+import { optimizedImage } from "@/utils/optimizeImage";
+import { deleteImage } from "@/config/cloudinary/deleteImage";
+import { uploadBufferImageToCloud } from "@/config/cloudinary/uploadBufferImageToCloud";
 
 export const changeLanguage = async (req: CustomRequest, res: Response) => {
   const { lng } = req.query;
@@ -49,7 +53,7 @@ export const uploadProfile = async (
   let result;
   try {
     // upload to cloudinary
-    result = await uploadSingleImage(filePath, "eShop.com/profile");
+    result = await uploadFileImageToCloud(filePath, "eShop.com/profile");
 
     if (result) {
       const userData = {
@@ -94,6 +98,83 @@ export const uploadProfile = async (
 
   res.status(200).json({
     message: "Profile image uploaded successfully",
+    imageUrl: result?.image_url,
+    public_id: result?.public_id,
+  });
+};
+
+// Optimize image before upload to cloudinary
+export const uploadProfileOptimize = async (
+  req: CustomRequest,
+  res: Response,
+  next: NextFunction
+) => {
+  const userId = req.userId as string;
+  const image = req.file as Express.Multer.File;
+  const user = await getUserById(userId);
+  checkUserIfNotExist(user);
+  checkUploadFile(image);
+
+  // Delete old avatar with public id
+  if (user?.image?.publicId) {
+    await deleteImage(user.image.publicId);
+  }
+
+  const fileName = Date.now() + "-" + `${Math.round(Math.random() * 1e9)}`;
+
+  let result;
+  try {
+    // Optimize image before upload to cloudinary
+    const optimized = await optimizedImage(image.buffer);
+    if (!optimized) {
+      return next(
+        createError(
+          "Failed to optimize image",
+          500,
+          errorCode.imageOptimizedFailed
+        )
+      );
+    }
+
+    // upload to cloudinary
+    result = await uploadBufferImageToCloud(
+      optimized,
+      "eShop.com/profile/optimize",
+      fileName,
+      "webp"
+    );
+
+    if (result) {
+      const userData = {
+        image: {
+          upsert: {
+            create: {
+              imageUrl: result.image_url,
+              publicId: result.public_id,
+            },
+            update: {
+              imageUrl: result.image_url,
+              publicId: result.public_id,
+            },
+          },
+        },
+      };
+
+      await updateUser(user!.id, userData);
+    }
+  } catch (error) {
+    console.error("Error uploading image to cloudinary:", error);
+    return next(
+      createError(
+        "Failed to upload image to cloudinary",
+        500,
+        errorCode.noImageUploaded
+      )
+    );
+  }
+
+  res.status(200).json({
+    message: "Profile picture uploaded successfully.",
     imageUrl: result?.image_url,
     public_id: result?.public_id,
   });

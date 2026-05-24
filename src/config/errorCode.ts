@@ -12,4 +12,5 @@ export const errorCode = {
   maintenance: "Error_Maintenance",
   noImageUploaded: "Error_NoImageUploaded", // upload errors
   failedToDeleteLocalFile: "Error_FailedToDeleteLocalFile", // upload errors
+  imageOptimizedFailed: "Error_ImageOptimizedFailed",
 };
