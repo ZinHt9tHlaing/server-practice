@@ -39,27 +39,27 @@ model Type {
 }
 
 model Post {
-  id         String     @id @default(uuid())
-  title      String     @db.VarChar(255)
+  id         String      @id @default(uuid())
+  title      String      @db.VarChar(255)
   content    String
   body       String
-  image      PostImage?
+  images     PostImage[]
   authorId   String
   categoryId String
   typeId     String
-  author     User       @relation(fields: [authorId], references: [id])
-  category   Category   @relation(fields: [categoryId], references: [id])
-  type       Type       @relation(fields: [typeId], references: [id])
-  tags       Tag[]
-  createdAt  DateTime   @default(now())
-  updatedAt  DateTime   @updatedAt
+  author     User        @relation(fields: [authorId], references: [id])
+  category   Category    @relation(fields: [categoryId], references: [id])
+  type       Type        @relation(fields: [typeId], references: [id])
+  tags       PostTag[] // Implicit Many-to-Many
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
 }
 
 model PostImage {
   id       String @id @default(cuid())
   imageUrl String @db.VarChar(255)
   publicId String @db.VarChar(255)
-  postId   String @unique
+  postId   String
   post     Post   @relation(fields: [postId], references: [id], onDelete: Cascade)
 }
 
@@ -78,8 +78,8 @@ model Product {
   type        Type               @relation(fields: [typeId], references: [id])
   orders      ProductsOnOrders[]
   images      ProductImage[]
-  tags        Tag[]
   users       User[]
+  tags        ProductTag[]
   createdAt   DateTime           @default(now())
   updatedAt   DateTime           @updatedAt
 }
@@ -123,35 +123,34 @@ model UserImage {
   user     User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
-// model PostTag {
-//   id    String @id @default(cuid())
-//   name  String @unique @db.VarChar(52)
-//   posts Post[]
-// }
-
-// model ProductTag {
-//   id       String    @id @default(cuid())
-//   name     String    @unique @db.VarChar(52)
-//   products Product[]
-// }
-
-model Tag {
-  id        String     @id @default(cuid())
-  name      String     @db.VarChar(52)
-  taggable  Taggable[]
-  post      Post?      @relation(fields: [postId], references: [id])
-  postId    String?
-  product   Product?   @relation(fields: [productId], references: [id])
-  productId String?
+model PostTag {
+  id    String @id @default(cuid())
+  name  String @unique @db.VarChar(52)
+  posts Post[] // Implicit Many-to-Many
 }
 
-model Taggable {
-  id     String @id @default(cuid())
-  tagId  String
-  tag    Tag    @relation(fields: [tagId], references: [id])
-  type   String @db.VarChar(7)
-  typeId String
+model ProductTag {
+  id       String    @id @default(cuid())
+  name     String    @unique @db.VarChar(52)
+  products Product[]
 }
+
+// model Tag {
+//   id        String   @id @default(cuid())
+//   name      String   @db.VarChar(52)
+//   post      Post?    @relation(fields: [postId], references: [id])
+//   postId    String?
+//   product   Product? @relation(fields: [productId], references: [id])
+//   productId String?
+// }
+
+// model Taggable {
+//   id     String @id @default(cuid())
+//   tagId  String
+//   tag    Tag    @relation(fields: [tagId], references: [id])
+//   type   String @db.VarChar(7)
+//   typeId String
+// }
 
 model Order {
   id         String             @id @default(cuid())

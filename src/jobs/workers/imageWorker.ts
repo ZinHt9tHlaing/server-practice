@@ -1,75 +1,87 @@
+import fs from "node:fs/promises";
 import { Worker, Job } from "bullmq";
+import redisConnection from "@/config/redisClient";
 import { optimizedImage } from "@/utils/optimizeImage";
 import { uploadBufferImageToCloud } from "@/config/cloudinary/uploadBufferImageToCloud";
-import { getUserById, updateUser } from "@/services/authServices";
-import { checkUserIfNotExist } from "@/utils/auth";
-import redisConnection from "@/config/redisClient";
-import fs from "node:fs/promises";
+import { uploadFileImageToCloud } from "@/config/cloudinary/uploadFileImageToCloud";
+import { deleteImage } from "@/config/cloudinary/deleteImage";
 
 type ImageSource =
-  | { type: "buffer"; data: string } // base64 string (NOT Buffer)
-  | { type: "file"; path: string }; // file path for local upload for diskStorage
+  | { type: "buffer"; data: string } // base64 string
+  | { type: "file"; path: string }; // diskStorage path
 
 interface ImageJobData {
-  userId: string;
   source: ImageSource;
-  fileName?: string;
+  width: number;
+  height: number;
+  quality: number;
+  fileName: string;
+  folderName: string;
+  oldPublicId?: string | null;
 }
 
-// Create a worker to process the image optimization job
 const imageWorker = new Worker(
   "imageQueue",
   async (job: Job<ImageJobData>) => {
-    const { userId, source, fileName } = job.data;
+    const {
+      source,
+      width,
+      height,
+      quality,
+      fileName,
+      folderName,
+      oldPublicId,
+    } = job.data;
 
-    const user = await getUserById(userId);
-    checkUserIfNotExist(user);
-
-    let decodedBuffer: Buffer;
-    let optimized;
+    let decodedBufferOrFilePath: Buffer;
 
     try {
-      // Decode base64 string to Buffer
       if (source.type === "buffer") {
-        decodedBuffer = Buffer.from(source.data, "base64");
+        // Convert base64 string to buffer
+        decodedBufferOrFilePath = Buffer.from(source.data, "base64");
       } else {
-        decodedBuffer = await fs.readFile(source.path);
+        // Read file path
+        decodedBufferOrFilePath = await fs.readFile(source.path);
       }
 
-      // Optimize image before upload to cloudinary
-      optimized = await optimizedImage(decodedBuffer);
+      // Optimize image => return buffer
+      const optimized = await optimizedImage(
+        decodedBufferOrFilePath,
+        width,
+        height,
+        quality
+      );
       if (!optimized) {
         throw new Error("Failed to optimize image");
       }
 
-      const result = await uploadBufferImageToCloud(
-        optimized,
-        "eShop.com/profile/optimize",
-        fileName,
-        "webp"
-      );
+      if (source.type === "buffer") {
+        // Upload from buffer (memoryStorage)
+        await uploadBufferImageToCloud(optimized, folderName, fileName);
+        console.log("✅ Stored via Cloudinary (MemoryStorage)");
+      } else {
+        // Write optimized buffer to temp file
+        await fs.writeFile(source.path, optimized); // for the disk storage
 
-      if (result) {
-        const userData = {
-          image: {
-            upsert: {
-              create: {
-                imageUrl: result.image_url,
-                publicId: result.public_id,
-              },
-              update: {
-                imageUrl: result.image_url,
-                publicId: result.public_id,
-              },
-            },
-          },
-        };
+        // Uploading to Cloudinary using a file path
+        await uploadFileImageToCloud(source.path, folderName, fileName);
+        console.log("✅ Stored via Cloudinary (DiskStorage)");
+      }
 
-        await updateUser(user!.id, userData);
+      // Delete old image if it exists
+      if (oldPublicId) {
+        await deleteImage(oldPublicId).catch((err) => {
+          console.error("Failed to delete old profile image!", err);
+        });
       }
     } catch (error) {
-      console.error("Error uploading image to cloudinary:", error);
-      throw new Error("Failed to upload image to cloudinary");
+      console.error("Error optimizing image in worker:", error);
+      throw new Error("Failed to process image in worker");
+    } finally {
+      // If there is an error or no error occurs, delete the temporary files
+      if (source.type === "file") {
+        await fs.unlink(source.path).catch(() => null);
+      }
     }
   },
   { connection: redisConnection }

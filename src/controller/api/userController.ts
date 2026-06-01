@@ -11,6 +11,7 @@ import { checkUserIfNotExist } from "@/utils/auth";
 import { checkUploadFile } from "@/utils/check";
 import { deleteImage } from "@/config/cloudinary/deleteImage";
 import ImageQueue from "@/jobs/queues/imageQueue";
+import generateCloudinaryPath from "@/config/cloudinary/generateCloudinaryPath";
 
 export const changeLanguage = async (req: CustomRequest, res: Response) => {
   const { lng } = req.query;
@@ -105,48 +106,60 @@ export const uploadProfile = async (
 // Optimize image before upload to cloudinary
 export const uploadProfileOptimize = async (
   req: CustomRequest,
-  res: Response,
-  next: NextFunction
+  res: Response
 ) => {
   const userId = req.userId as string;
   const image = req.file as Express.Multer.File;
+
   const user = await getUserById(userId);
   checkUserIfNotExist(user);
   checkUploadFile(image);
 
-  // Delete old avatar with public id
-  if (user?.image?.publicId) {
-    await deleteImage(user.image.publicId);
-  }
+  //  Pass the old avatar to queue for delete later
+  const oldPublicId = user?.image?.publicId || null;
 
-  const fileName = Date.now() + "-" + `${Math.round(Math.random() * 1e9)}`;
+  // Generate a unique filename for Cloudinary
+  const folderName = "eShop.com/profile";
+  const fileName = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
+  // Generate cloudinary path
+  const { publicId, imageUrl } = generateCloudinaryPath({
+    folderName,
+    fileName,
+  });
 
-  let job;
-  try {
-    job = await ImageQueue.add("optimize-image", {
-      userId,
-      source: {
-        type: "buffer",
-        data: image.buffer.toString("base64"), // convert buffer to base64 string coz queue job doesn't support buffer
+  //  Pass the raw work off to BullMQ and return early!
+  await ImageQueue.add("optimize-profile-image", {
+    source: image.buffer
+      ? { type: "buffer", data: image.buffer.toString("base64") } // convert buffer to base64 string coz queue job doesn't support buffer
+      : { type: "file", path: image.path }, // for DiskStorage
+    width: 200,
+    height: 200,
+    quality: 50,
+    fileName: fileName,
+    folderName: folderName,
+    oldPublicId: oldPublicId,
+  });
+
+  const userData = {
+    image: {
+      upsert: {
+        create: {
+          imageUrl,
+          publicId,
+        },
+        update: {
+          imageUrl,
+          publicId,
+        },
       },
-      fileName,
-    });
-  } catch (error) {
-    console.error("Error queueing image job:", error);
-    return next(
-      createError(
-        "Failed to queue image job",
-        500,
-        errorCode.imageOptimizedFailed
-      )
-    );
-  }
+    },
+  };
+  await updateUser(user!.id, userData);
 
   res.status(200).json({
     message: "Profile picture uploaded successfully.",
-    // imageUrl: result?.image_url,
-    // public_id: result?.public_id,
-    jobId: job.id,
+    image_url: imageUrl,
+    public_id: publicId,
   });
 };
 

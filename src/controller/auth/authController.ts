@@ -673,3 +673,18 @@ export const resetPassword = async (
       userId: user?.id,
     });
 };
+
+export const authCheck = async (req: CustomRequest, res: Response) => {
+  const userId = req.userId as string;
+  const user = await getUserById(userId);
+  checkUserIfNotExist(user);
+
+  const fullName = `${user?.firstName} ${user?.lastName}`;
+
+  res.status(200).json({
+    message: "You are a authenticated user.",
+    userId: user?.id,
+    username: fullName,
+    image: user?.image,
+  });
+};

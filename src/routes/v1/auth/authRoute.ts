@@ -1,4 +1,5 @@
 import {
+  authCheck,
   confirmPassword,
   forgetPassword,
   login,
@@ -8,6 +9,7 @@ import {
   verifyOtp,
   verifyOtpForPassword,
 } from "@/controller/auth/authController";
+import { authMiddleware } from "@/middlewares/authMiddleware";
 import { validationRequest } from "@/middlewares/validationRequest";
 import {
   confirmPasswordValidator,
@@ -51,5 +53,7 @@ router.post(
   validationRequest,
   resetPassword
 );
+
+router.get("/auth-check", authMiddleware, authCheck);
 
 export default router;

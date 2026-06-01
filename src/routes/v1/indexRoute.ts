@@ -4,8 +4,11 @@ import express from "express";
 import authRoute from "./auth/authRoute";
 // admin routes
 import adminUserRoute from "./admin/userRoutes";
+import adminPostRoutes from "./admin/adminPostRoutes";
+
 // api routes
 import userApiRoute from "./api/userRoutes";
+import userPostRoutes from "./api/userPostRoutes";
 
 // view routes
 import viewRoutes from "./web/viewRoute";
@@ -26,13 +29,18 @@ const router = express.Router();
 
 // no need maintenance middleware
 router.use("/api/v1", authRoute);
+
+// admin
 router.use(
   "/api/v1/admin",
   authMiddleware,
   authorize(true, "ADMIN"),
-  adminUserRoute
+  adminUserRoute, // admin user routes
+  adminPostRoutes // admin post routes
 );
-router.use("/api/v1/user", userApiRoute);
+
+// user
+router.use("/api/v1/user", userApiRoute, userPostRoutes);
 
 // view routes
 router.use(viewRoutes);
