@@ -58,6 +58,7 @@ export const authMiddleware = async (
         phone: string;
       };
     } catch (err) {
+      console.log("Error occurs while verifying token: ", err);
       return next(
         createError(
           "You are not an authenticated user!",

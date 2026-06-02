@@ -17,7 +17,8 @@ interface ImageJobData {
   quality: number;
   fileName: string;
   folderName: string;
-  oldPublicId?: string | null;
+  oldPublicId?: string | null; // for single image (e.g. profile)
+  oldPublicIds?: string[]; // for multiple image (e.g. post)
 }
 
 const imageWorker = new Worker(
@@ -31,6 +32,7 @@ const imageWorker = new Worker(
       fileName,
       folderName,
       oldPublicId,
+      oldPublicIds,
     } = job.data;
 
     let decodedBufferOrFilePath: Buffer;
@@ -68,11 +70,22 @@ const imageWorker = new Worker(
         console.log("✅ Stored via Cloudinary (DiskStorage)");
       }
 
-      // Delete old image if it exists
+      // delete single image if oldPublicId exists
       if (oldPublicId) {
         await deleteImage(oldPublicId).catch((err) => {
-          console.error("Failed to delete old profile image!", err);
+          console.error("Failed to delete old image!", err);
         });
+      }
+
+      // for multiple image delete
+      if (oldPublicIds && oldPublicIds.length > 0) {
+        await Promise.all(
+          oldPublicIds.map((publicId) =>
+            deleteImage(publicId).catch((err) => {
+              console.error("Failed to delete old image!", err);
+            })
+          )
+        );
       }
     } catch (error) {
       console.error("Error optimizing image in worker:", error);
