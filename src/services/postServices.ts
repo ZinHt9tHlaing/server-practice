@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { prismaClient } from "./prismaClient";
 
 type ImageInput = {
   imageUrl: string;
@@ -15,6 +16,10 @@ export type PostArgs = {
   tags: string[];
   images?: ImageInput[];
 };
+
+// Function parameters တွေကို tuple အဖြစ်ထုတ်ပေးတယ်။
+// $extends() Prisma Type (fullName, updatedAt စတာတွေ ပါပြီးသား)
+type PostFindManyArgs = Parameters<typeof prismaClient.post.findMany>[0];
 
 export const createOnePost = async (postData: PostArgs) => {
   return prisma.post.create({
@@ -125,4 +130,50 @@ export const deleteOnePost = async (postId: string) => {
       id: postId,
     },
   });
+};
+
+export const getPostWithRelations = async (id: string) => {
+  return prismaClient.post.findUnique({
+    where: { id },
+    select: {
+      id: true,
+      title: true,
+      content: true,
+      body: true,
+      updatedAt: true,
+      author: {
+        select: {
+          firstName: true,
+          lastName: true,
+          fullName: true,
+        },
+      },
+      category: {
+        select: {
+          name: true,
+        },
+      },
+      type: {
+        select: {
+          name: true,
+        },
+      },
+      tags: {
+        select: {
+          name: true,
+        },
+      },
+      images: {
+        omit: {
+          id: true,
+        },
+      },
+    },
+  });
+};
+
+// for Offset Pagination and Cursor-based Pagination
+export const getPostsLists = async (options: PostFindManyArgs) => {
+  // Can be changed options according to the Offset and Cursor based Pagination
+  return prismaClient.post.findMany(options);
 };

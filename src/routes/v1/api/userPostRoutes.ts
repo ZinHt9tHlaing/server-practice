@@ -5,11 +5,34 @@ import {
   getPost,
   getPostsByPagination,
 } from "@/controller/api/postController";
+import { validationRequest } from "@/middlewares/validationRequest";
+import {
+  getPostValidator,
+  getPostsByPaginationValidator,
+} from "@/validators/postValidators";
 
 const router = express.Router();
 
-router.get("/post/:id", authMiddleware, getPost);
-router.get("/posts", authMiddleware, getPostsByPagination); // Offset Pagination
-router.get("/posts/infinite", authMiddleware, getInfinitePostsByPagination); // Cursor-based Pagination
+router.get(
+  "/post/:id",
+  getPostValidator,
+  validationRequest,
+  authMiddleware,
+  getPost
+);
+router.get(
+  "/posts",
+  getPostsByPaginationValidator,
+  validationRequest,
+  authMiddleware,
+  getPostsByPagination
+); // Offset Pagination
+router.get(
+  "/posts/infinite",
+  getPostsByPaginationValidator,
+  validationRequest,
+  authMiddleware,
+  getInfinitePostsByPagination
+); // Cursor-based Pagination
 
 export default router;

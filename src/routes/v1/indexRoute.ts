@@ -40,7 +40,7 @@ router.use(
 );
 
 // user
-router.use("/api/v1/user", userApiRoute, userPostRoutes);
+router.use("/api/v1/users", userApiRoute, userPostRoutes);
 
 // view routes
 router.use(viewRoutes);

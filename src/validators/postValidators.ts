@@ -1,4 +1,4 @@
-import { body } from "express-validator";
+import { body, param, query } from "express-validator";
 import sanitizeHtml from "sanitize-html";
 
 export const createPostValidator = [
@@ -48,4 +48,24 @@ export const updatePostValidator = [
 
 export const deletePostValidator = [
   body("postId", "Post Id is required.").trim().notEmpty(),
+];
+
+export const getPostValidator = [
+  param("id", "Post Id is required.").trim().notEmpty(),
+];
+
+export const getPostsByPaginationValidator = [
+  query("page", "Page number must be unsigned integer.")
+    .isInt({ gt: 0 }) // At least 1, greater than 0
+    .optional(),
+  query("limit", "Limit number must be greater than 4.")
+    .isInt({ gt: 4 }) // At least 5, greater than 4
+    .optional(),
+];
+
+export const getInfinitePostsByPaginationValidator = [
+  query("cursor", "Cursor must be Post ID.").isInt({ gt: 0 }).optional(),
+  query("limit", "Limit number must be unsigned integer")
+    .isInt({ gt: 2 }) // starts and shows from page 3
+    .optional(),
 ];
