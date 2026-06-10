@@ -101,9 +101,9 @@ const imageWorker = new Worker(
 );
 
 imageWorker.on("completed", (job) => {
-  console.log(`✅ Job completed with result ${job.id}`);
+  console.log(`✅ Image job completed with result ${job.id}`);
 });
 
 imageWorker.on("failed", (job, error) => {
-  console.error(`❌ Job ${job?.id} failed with error: ${error.message}`);
+  console.error(`❌ Image job failed with error: ${error.message}`);
 });

@@ -17,6 +17,7 @@ import { errorCode } from "@/config/errorCode";
 import { getUserById } from "@/services/authServices";
 import { checkUserIfNotExist } from "@/utils/auth";
 import { deleteImage } from "@/config/cloudinary/deleteImage";
+import CacheQueue from "@/jobs/queues/cacheQueue";
 
 export const removeFiles = async (
   originalFile: string,
@@ -93,6 +94,18 @@ export const createPost = async (req: CustomRequest, res: Response) => {
     authorId: userId,
   });
 
+  // delete cache
+  await CacheQueue.add(
+    "invalidate-cache-post",
+    {
+      pattern: "posts:*",
+    },
+    {
+      jobId: `invalidate-${Date.now()}`,
+      priority: 1, // priority 1 is high priority (default is 0)
+    }
+  );
+
   res.status(200).json({
     message: "Successfully created a new post.",
     postId: post.id,
@@ -168,6 +181,18 @@ export const updatePost = async (
 
   const updatedPost = await updateOnePost(postId, data);
 
+  // delete cache
+  await CacheQueue.add(
+    "invalidate-cache-post",
+    {
+      pattern: "posts:*",
+    },
+    {
+      jobId: `invalidate-${Date.now()}`,
+      priority: 1,
+    }
+  );
+
   res.status(200).json({
     message: "Successfully updated the post.",
     postData: updatedPost.id,
@@ -211,6 +236,18 @@ export const deletePost = async (
   }
 
   const postDeleted = await deleteOnePost(post.id);
+
+  // delete cache
+  await CacheQueue.add(
+    "invalidate-cache-post",
+    {
+      pattern: "posts:*",
+    },
+    {
+      jobId: `invalidate-${Date.now()}`,
+      priority: 1,
+    }
+  );
 
   res.status(200).json({
     message: "Successfully deleted the post.",

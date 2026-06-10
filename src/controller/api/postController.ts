@@ -6,6 +6,7 @@ import { errorCode } from "@/config/errorCode";
 import { getUserById } from "@/services/authServices";
 import { checkUserIfNotExist } from "@/utils/auth";
 import { Prisma } from "../../../generated/prisma/client";
+import { getOrSetCache } from "@/utils/cache";
 
 export const getPost = async (
   req: CustomRequest,
@@ -18,7 +19,13 @@ export const getPost = async (
   const user = await getUserById(userId);
   checkUserIfNotExist(user);
 
-  const post = await getPostWithRelations(id);
+  // const post = await getPostWithRelations(id);
+
+  const cacheKey = `posts:${JSON.stringify(id)}`;
+  const post = await getOrSetCache(cacheKey, async () => {
+    return await getPostWithRelations(id);
+  });
+
   if (!post) {
     return next(createError("Post not found!", 404, errorCode.invalid));
   }
@@ -92,7 +99,12 @@ export const getPostsByPagination = async (
     },
   };
 
-  const posts = await getPostsLists(options);
+  // const posts = await getPostsLists(options);
+
+  const cacheKey = `posts:${JSON.stringify(req.query)}`;
+  const posts = await getOrSetCache(cacheKey, async () => {
+    return await getPostsLists(options);
+  });
 
   // တောင်းတာက 5ခုပဲ တစ်ခုပိုယူတော့ 6ခုဖြစ်နေမယ်ဆိုရင်, 6ခုက တောင်းထားတဲ့5ခုထက်များနေတယ်ဆိုရင် NextPageရှိတယ်လို့ဆိုလို
   // 4 > 5 ==> next page မရှိ
@@ -132,10 +144,15 @@ export const getInfinitePostsByPagination = async (
   const user = await getUserById(userId);
   checkUserIfNotExist(user);
 
+  // အရင်ယူပီးသား post Cursorအဟောင်း ကိုယ်တိုင် ပြန်ပါမလာအောင် ၁ ခု (skip 1) ကျော်လိုက်ပါတယ် (Duplicate မဖြစ်အောင် ကာကွယ်တာ)
+  // "ပေးလိုက်တဲ့ lastCursor (Post 5) နေရာကနေ စယူပါ။ ဒါပေမယ့် အဲဒီ Post 5 ကိုတော့ ၁ ခု ကျော် (skip 1) လိုက်ပါ။ သူ့နောက်ကဟာကနေပဲ စယူပါ" လို့ ခိုင်းလိုက်တာ ဖြစ်ပါတယ်။
+  // skip: 1 ထည့်လိုက်တဲ့အခါ ထွက်လာမယ့်စာရင်း = [Post 6, Post 7, Post 8, Post 9, Post 10]
+  // skip မပါရင် ထွက်လာမယ့်စာရင်း = [Post 5, Post 6, Post 7, Post 8, Post 9] (Post 5 က အရင် Page ကဟာ)
+  // Post 5 က Frontend မှာ အရင်ကတည်းက ပြပြီးသား ဖြစ်နေပါတယ်။ အဲဒါကို ထပ်ယူလိုက်ရင် Frontend မှာ Post 5 က နှစ်ခါ ထပ်သွားပီး Duplicate Error တက်နိုင်ပါတယ်။
   const options = {
     take: limit + 1,
-    skip: lastCursor ? 1 : 0, // Cursor ကိုယ်တိုင် ပြန်ပါမလာအောင် ၁ ခု ကျော်လိုက်ပါတယ်
-    cursor: lastCursor ? { id: lastCursor } : undefined, // lastCursor က 101 ဆိုရင် 101ကို ကျော်ပီး 102ကစယူ
+    skip: lastCursor ? 1 : 0,
+    cursor: lastCursor ? { id: lastCursor } : undefined, // lastCursor က 5 ဆိုရင် 5 ကို ကျော်ပီး 6 ကနေ 10 အထိယူသွားမယ်
     select: {
       id: true,
       title: true,
@@ -156,11 +173,20 @@ export const getInfinitePostsByPagination = async (
 
   const posts = await getPostsLists(options);
 
+  // const cacheKey = `posts:${JSON.stringify(req.query)}`;
+  // const posts = await getOrSetCache(cacheKey, async () => {
+  //   return await getPostsLists(options);
+  // });
+
   const hasNextPage = posts.length > limit;
 
   if (hasNextPage) {
     posts.pop(); // ပိုနေတဲ့ ၁ ခုကို ဖယ်ထုတ်ပါတယ်
   }
+
+  // nextCursor ဆိုတာ နောက်တစ်ခါ API လာခေါ်ရင် ဘယ်နေရာကနေ ဆက်စပြီး ယူပေးရမလဲ ဆိုတာကို Frontend က သိအောင် ပြန်ပို့ပေးလိုက်တဲ့ ID
+  // Frontend (ဥပမာ- React သို့မဟုတ် Mobile App) ဘက်ကနေ User က Screen ကို အောက်ဆုံးထိ Scroll ဆွဲချသွားလို့ နောက်ထပ် Post တွေကို ထပ်လိုချင်တဲ့အခါ (Infinite Scrolling)၊ ဒီ nextCursor အဖြစ် ရလာတဲ့ ID လေးကို Server (API) ဆီ ပြန်ပို့ပေးရပါတယ်။
+  // အဲ့ဒီအခါ သင့် Code ထဲက အပေါ်ဆုံးနားမှာရှိတဲ့ const lastCursor = req.query.cursor ဆိုတဲ့ နေရာကနေ အဲ့ဒီ ID ကို လက်ခံရရှိသွားပါလိမ့်မယ်။
 
   // နောက်တစ်ခါ ခေါ်ဖို့အတွက် လက်ရှိ Result ရဲ့ နောက်ဆုံး ID ကို Cursor အဖြစ် ယူပါတယ်
   const nextCursor =

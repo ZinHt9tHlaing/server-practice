@@ -17,7 +17,8 @@
     "db:seed": "ts-node prisma/seed.ts",
     "gen-secret": "openssl rand -base64 32",
     "image:work": "nodemon --exec ts-node -r tsconfig-paths/register src/jobs/workers/imageWorker.ts",
-    "cache:work": "nodemon --exec ts-node -r tsconfig-paths/register src/jobs/workers/cacheWorker.ts"
+    "cache:work": "nodemon --exec ts-node -r tsconfig-paths/register src/jobs/workers/cacheWorker.ts",
+    "work:all": "concurrently \"npm run image:work\" \"npm run cache:work\""
   },
   "keywords": [],
   "author": "",
@@ -31,7 +32,6 @@
     "bullmq": "^5.77.1",
     "cloudinary": "^2.10.0",
     "compression": "^1.8.1",
-    "concurrently": "^9.2.1",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
     "crypto": "^1.0.1",
@@ -73,6 +73,7 @@
     "@types/streamifier": "^0.1.2",
     "@typescript-eslint/eslint-plugin": "^8.59.2",
     "@typescript-eslint/parser": "^8.59.2",
+    "concurrently": "^10.0.3",
     "dotenv": "^17.4.2",
     "eslint": "^9.39.4",
     "eslint-plugin-import": "^2.32.0",

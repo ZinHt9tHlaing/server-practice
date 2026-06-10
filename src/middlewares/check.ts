@@ -11,6 +11,6 @@ export const checkMiddleware = async (
   // err.code = "Error_TokenExpired";
   // return next(err)
 
-  req.userId = 12345;
+  req.userId = "12345";
   next();
 };
