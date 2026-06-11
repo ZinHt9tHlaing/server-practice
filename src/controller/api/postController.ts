@@ -189,6 +189,7 @@ export const getInfinitePostsByPagination = async (
   // အဲ့ဒီအခါ သင့် Code ထဲက အပေါ်ဆုံးနားမှာရှိတဲ့ const lastCursor = req.query.cursor ဆိုတဲ့ နေရာကနေ အဲ့ဒီ ID ကို လက်ခံရရှိသွားပါလိမ့်မယ်။
 
   // နောက်တစ်ခါ ခေါ်ဖို့အတွက် လက်ရှိ Result ရဲ့ နောက်ဆုံး ID ကို Cursor အဖြစ် ယူပါတယ်
+  // နောက်ထပ် ခေါ်စရာ cursorရှိသေးလား မရှိဘူးလား
   const nextCursor =
     posts.length > 0
       ? posts[posts.length - 1].id // နောက်ဆုံး dataကိုယူ

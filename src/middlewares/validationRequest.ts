@@ -14,19 +14,18 @@ export const validationRequest = async (
   });
 
   if (errors.length > 0) {
-    if (req.files && Array.isArray(req.files)) {
-      const deletePromises = (req.files as Express.Multer.File[]).map(
-        async (file) => {
-          try {
-            await fs.unlink(file.path);
-            console.log(
-              `Temporary file deleted due to validation error: ${file.path}`
-            );
-          } catch (error) {
-            console.error(`Failed to delete file: ${file.path}`, error);
-          }
+    if (Array.isArray(req.files) && req.files.length > 0) {
+      const files = req.files as Express.Multer.File[];
+      const deletePromises = files.map(async (file) => {
+        try {
+          await fs.unlink(file.path);
+          console.log(
+            `Multiple temporary file deleted: ${file.path}`
+          );
+        } catch (error) {
+          console.error(`Failed to delete Multiple temporary file: ${file.path}`, error);
         }
-      );
+      });
 
       await Promise.all(deletePromises);
     }

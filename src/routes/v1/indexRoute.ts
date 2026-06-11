@@ -5,6 +5,7 @@ import authRoute from "./auth/authRoute";
 // admin routes
 import adminUserRoute from "./admin/userRoutes";
 import adminPostRoutes from "./admin/adminPostRoutes";
+import adminProductRoutes from "./admin/adminProductRoutes";
 
 // api routes
 import userApiRoute from "./api/userRoutes";
@@ -36,7 +37,8 @@ router.use(
   authMiddleware,
   authorize(true, "ADMIN"),
   adminUserRoute, // admin user routes
-  adminPostRoutes // admin post routes
+  adminPostRoutes, // admin post routes
+  adminProductRoutes // admin product routes
 );
 
 // user

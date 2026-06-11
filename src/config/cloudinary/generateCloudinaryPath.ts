@@ -12,11 +12,6 @@ interface CloudinaryPathInput {
   fileName: string;
 }
 
-interface CloudinaryPathResult {
-  publicId: string;
-  imageUrl: string;
-}
-
 /**
  * 📍 ၁။ အသစ်ထည့်သွင်းလိုက်သော Reusable Function
  * Folder Name နှင့် File Name ကို အခြေခံပြီး Cloudinary ရဲ့
@@ -25,7 +20,7 @@ interface CloudinaryPathResult {
 const generateCloudinaryPath = ({
   folderName,
   fileName,
-}: CloudinaryPathInput): CloudinaryPathResult => {
+}: CloudinaryPathInput) => {
   const publicId = `${folderName}/${fileName}`;
 
   const imageUrl = cloudinary.url(publicId, {

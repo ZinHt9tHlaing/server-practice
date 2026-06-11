@@ -38,6 +38,7 @@ const imageWorker = new Worker(
     let decodedBufferOrFilePath: Buffer;
 
     try {
+      // Image ကို Process လုပ်ပေးမယ့် sharp library ဟာ Text (Base64 string) ကို တိုက်ရိုက် လက်မခံဘဲ Binary Data (Buffer) ကိုသာ လက်ခံပြီး အလုပ်လုပ်ပေးနိုင်လို့ ဖြစ်ပါတယ်။
       if (source.type === "buffer") {
         // Convert base64 string to buffer
         decodedBufferOrFilePath = Buffer.from(source.data, "base64");

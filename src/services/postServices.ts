@@ -114,6 +114,8 @@ export const updateOnePost = async (postId: string, postData: PostArgs) => {
       tags:
         postData.tags && postData.tags.length > 0
           ? {
+              set: [], // updateလုပ်တဲ့အခါမှာ relationshipချိတ်နေတာတွေ အကုန်လုံးကိုအရင်ဖြုတ်ချ အသစ်ပြန်ပြီးconnectလုပ်မယ်
+              // disconnect: [{ id: 1 }, { id: 2 }], // တစ်ခုချင်းစီဖြုတ်ချင်ရင် အခုလိုသုံးမယ်
               connectOrCreate: postData.tags.map((tagName) => ({
                 where: { name: tagName },
                 create: { name: tagName },

@@ -2,7 +2,7 @@ import { body, param, query } from "express-validator";
 import sanitizeHtml from "sanitize-html";
 
 export const createPostValidator = [
-  body("title", "Title is required.").trim().notEmpty().escape(), // remove special characters for XSS attack
+  body("title", "Title is required.").trim().notEmpty().escape(), // remove special characters for XSS attack (eg: "<script>alert('XSS')</script>")
   body("content", "Content is required.").trim().notEmpty().escape(),
   body("body", "Body is required.")
     .trim()
@@ -15,9 +15,13 @@ export const createPostValidator = [
     .optional({ nullable: true })
     .customSanitizer((value: string) => {
       if (value) {
-        // remove empty tag; eg: " ", " " , "tag3" => ["tag3"]
-        // and trim extra spaces
-        return value.split(",").filter((tag: string) => tag.trim() !== "");
+        // split value with comma eg: " tag1 , tag2, tag3 " => ["tag1","tag2","tag3", ""]
+        // trim spaces eg: [" tag1 ", " tag2 ", " tag3 "] => ["tag1", "tag2", "tag3"]
+        // filter out empty strings eg: ["tag1", "tag2", "tag3", ""] => ["tag1", "tag2", "tag3"]
+        return value
+          .split(",")
+          .map((tag: string) => tag.trim())
+          .filter((tag: string) => tag !== "");
       } // string to array
       return value;
     }),

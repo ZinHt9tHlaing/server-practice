@@ -63,6 +63,12 @@ app
   .use(rateLimiter) // limits the number of requests from a single IP
   .use(i18nextMiddleware.handle(i18next)); // localization middleware
 
+// client ရော server ရော ၂ခုလုံးက localhost ဖြစ်တဲ့အတွက် same-site ဖြစ်တယ်။ အနောက်က portပဲမတူတာ, ဒါမှ browserကပြပေးမှာ ဖြစ်တယ်။
+app.use((req, res, next) => {
+  res.setHeader("Cross-Origin-Resource-Policy", "same-site");
+  next();
+});
+
 // static public Access ( File )
 app.use(express.static("public"));
 app.use(express.static("uploads"));

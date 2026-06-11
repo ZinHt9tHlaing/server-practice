@@ -62,6 +62,7 @@ export const createPost = async (req: CustomRequest, res: Response) => {
   const uploadImgPromises = images.map(async (image) => {
     const uniqueFileName = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
     // Generate cloudinary path
+    // generate လုပ်ရတာက image schema ထဲမှာ imageUrl နဲ့ publicId ကို store လုပ်ဖို့အတွက်
     const { publicId, imageUrl } = generateCloudinaryPath({
       folderName,
       fileName: uniqueFileName,
@@ -69,8 +70,8 @@ export const createPost = async (req: CustomRequest, res: Response) => {
 
     await ImageQueue.add("optimize-post-image", {
       source: image.buffer
-        ? { type: "buffer", data: image.buffer.toString("base64") }
-        : { type: "file", path: image.path },
+        ? { type: "buffer", data: image.buffer.toString("base64") } // Binary Data (Buffer) တွေကို BullMQ (Redis) မှာ အလုပ်လုပ်တဲ့ JSON format (Text) ထဲ တိုက်ရိုက်ထည့်လို့ မရတဲ့အတွက် အခုလို Base64 ပြောင်းပေးရခြင်း ဖြစ်ပါတယ်။
+        : { type: "file", path: image.path }, // File Path
       width: 835,
       height: 577,
       quality: 100,
@@ -96,7 +97,7 @@ export const createPost = async (req: CustomRequest, res: Response) => {
 
   // delete cache
   await CacheQueue.add(
-    "invalidate-cache-post",
+    "invalidate-post-cache",
     {
       pattern: "posts:*",
     },
@@ -151,7 +152,7 @@ export const updatePost = async (
     const oldImagePublicIds =
       post.images && post.images.length > 0
         ? post.images.map((img) => img.publicId)
-        : undefined;
+        : undefined; // old image ကို delete လုပ်ဖို့အတွက်
 
     const uploadImgPromises = images.map(async (image) => {
       const uniqueFileName = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
@@ -183,7 +184,7 @@ export const updatePost = async (
 
   // delete cache
   await CacheQueue.add(
-    "invalidate-cache-post",
+    "invalidate-post-cache",
     {
       pattern: "posts:*",
     },
@@ -239,7 +240,7 @@ export const deletePost = async (
 
   // delete cache
   await CacheQueue.add(
-    "invalidate-cache-post",
+    "invalidate-post-cache",
     {
       pattern: "posts:*",
     },
