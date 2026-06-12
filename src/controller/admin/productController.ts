@@ -21,6 +21,7 @@ export const createProduct = async (req: CustomRequest, res: Response) => {
     description,
     price,
     discount,
+    rating,
     inventory,
     category,
     type,
@@ -61,6 +62,7 @@ export const createProduct = async (req: CustomRequest, res: Response) => {
     description,
     price: +price, // string to number
     discount: Number(discount),
+    rating: Number(rating),
     inventory: Number(inventory),
     category,
     type,

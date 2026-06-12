@@ -2,12 +2,16 @@ import express from "express";
 
 import { authMiddleware } from "@/middlewares/authMiddleware";
 import {
+  checkInventory,
   getProduct,
   getProductsByPagination,
+  searchProducts,
 } from "@/controller/api/productController";
 import {
+  checkInventoryMiddleware,
   getProductValidator,
   getProductsByPaginationValidator,
+  searchProductsValidator,
 } from "@/validators/productValidator";
 import { validationRequest } from "@/middlewares/validationRequest";
 
@@ -27,6 +31,22 @@ router.get(
   getProductsByPaginationValidator,
   validationRequest,
   getProductsByPagination
+);
+
+router.get(
+  "/search/products",
+  authMiddleware,
+  searchProductsValidator,
+  validationRequest,
+  searchProducts
+);
+
+router.get(
+  "/check-inventory/:id",
+  authMiddleware,
+  checkInventoryMiddleware,
+  validationRequest,
+  checkInventory
 );
 
 export default router;

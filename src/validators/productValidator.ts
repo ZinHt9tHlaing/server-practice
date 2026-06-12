@@ -80,8 +80,8 @@ export const getProductsByPaginationValidator = [
   //       continue;
   //     } // skip white space
 
-        // CUID Format check (must be string and number, Special Characters not allow)
-        // if CUID length is 25, then use /^[a-z0-9]{25}$/i
+  // CUID Format check (must be string and number, Special Characters not allow)
+  // if CUID length is 25, then use /^[a-z0-9]{25}$/i
   //     if (!/^[a-z0-9]+$/i.test(trimmed)) {
   //       throw new Error(`Invalid category ID format found: ${trimmed}`);
   //     }
@@ -103,4 +103,41 @@ export const getProductsByPaginationValidator = [
   //   }
   //   return true;
   // }),
+];
+
+export const searchProductsValidator = [
+  query("keyword", "Search keyword is required!")
+    .optional()
+    .isString()
+    .trim()
+    .isLength({ min: 1, max: 100 }) // Prevent insanely long queries
+    .escape(), // Sanitizes HTML to prevent XSS
+
+  query("minPrice", "minPrice must be a valid number.")
+    .optional()
+    .isFloat({ min: 0 })
+    .toFloat(), // Converts string "10.50" to number 10.5
+  query("maxPrice", "maxPrice must be a valid number.")
+    .optional()
+    .isFloat({ min: 0 })
+    .toFloat(),
+
+  query("minRating", "minRating must be an integer between 0 and 5.")
+    .optional()
+    .isInt({ min: 0, max: 5 })
+    .toInt(), // Converts string "4" to number 4
+
+  query("maxRating", "maxRating must be an integer between 0 and 5.")
+    .optional()
+    .isInt({ min: 0, max: 5 })
+    .toInt(),
+
+  query("cursor", "Cursor must be Product ID.").isString().optional(),
+  query("limit", "Limit number must be unsigned integer")
+    .isInt({ gt: 4 }) // starts and shows from page 5
+    .optional(),
+];
+
+export const checkInventoryMiddleware = [
+  param("id", "Product ID is required.").trim().notEmpty(),
 ];

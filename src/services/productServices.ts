@@ -28,6 +28,7 @@ export const createOneProduct = async (data: ProductArgs) => {
     description: data.description,
     price: data.price,
     discount: data.price,
+    rating: data.rating,
     inventory: data.inventory,
     category: {
       connectOrCreate: {
