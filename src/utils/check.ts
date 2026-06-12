@@ -12,7 +12,7 @@ export const checkUploadFile = (
   }
 };
 
-export const checkModelIfExist = <T>(model: T | null) => {
+export const checkModelIfNotExist = <T>(model: T | null) => {
   if (!model) {
     const error: AppError = new Error("This item does not exist.");
     error.status = 409;

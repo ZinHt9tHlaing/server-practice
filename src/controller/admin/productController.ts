@@ -9,9 +9,8 @@ import {
   updateOneProduct,
 } from "@/services/productServices";
 import { CustomRequest } from "@/types/custom-type";
-import { checkModelIfExist, checkUploadFile } from "@/utils/check";
+import { checkModelIfNotExist, checkUploadFile } from "@/utils/check";
 import { NextFunction, Response } from "express";
-import { removeFiles } from "./postController";
 import { createError } from "@/utils/error";
 import { errorCode } from "@/config/errorCode";
 import { deleteImage } from "@/config/cloudinary/deleteImage";
@@ -183,7 +182,7 @@ export const deleteProduct = async (req: CustomRequest, res: Response) => {
   const { productId } = req.body;
 
   const product = await getProductById(productId);
-  checkModelIfExist(product);
+  checkModelIfNotExist(product);
 
   if (product!.images && product!.images.length > 0) {
     await Promise.all(

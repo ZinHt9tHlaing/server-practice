@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { Status } from "../../generated/prisma/enums";
+import { Prisma } from "../../generated/prisma/client";
 
 type ImageInput = {
   imageUrl: string;
@@ -135,4 +136,32 @@ export const deleteOneProduct = async (productId: string) => {
       id: productId,
     },
   });
+};
+
+export const getProductWithRelations = async (id: string) => {
+  return prisma.product.findUnique({
+    where: { id },
+    omit: {
+      categoryId: true,
+      typeId: true,
+      createdAt: true,
+      updatedAt: true,
+    },
+    include: {
+      images: {
+        select: {
+          id: true, // for looping key in react
+          imageUrl: true,
+          publicId: true,
+        },
+      },
+    },
+  });
+};
+
+// Using Generics for type safety
+export const getProductsList = async <T extends Prisma.ProductFindManyArgs>(
+  options?: T
+) => {
+  return prisma.product.findMany(options);
 };

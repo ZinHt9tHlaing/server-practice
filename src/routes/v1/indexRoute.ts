@@ -10,6 +10,7 @@ import adminProductRoutes from "./admin/adminProductRoutes";
 // api routes
 import userApiRoute from "./api/userRoutes";
 import userPostRoutes from "./api/userPostRoutes";
+import userProductRoutes from "./api/userProductRoutes";
 
 // view routes
 import viewRoutes from "./web/viewRoute";
@@ -42,7 +43,7 @@ router.use(
 );
 
 // user
-router.use("/api/v1/users", userApiRoute, userPostRoutes);
+router.use("/api/v1/users", userApiRoute, userPostRoutes, userProductRoutes);
 
 // view routes
 router.use(viewRoutes);
