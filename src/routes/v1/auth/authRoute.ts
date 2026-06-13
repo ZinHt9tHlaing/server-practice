@@ -1,5 +1,6 @@
 import {
   authCheck,
+  changePassword,
   confirmPassword,
   forgetPassword,
   login,
@@ -12,6 +13,7 @@ import {
 import { authMiddleware } from "@/middlewares/authMiddleware";
 import { validationRequest } from "@/middlewares/validationRequest";
 import {
+  changePasswordValidator,
   confirmPasswordValidator,
   forgetPasswordValidator,
   loginValidator,
@@ -55,5 +57,12 @@ router.post(
 );
 
 router.get("/auth-check", authMiddleware, authCheck);
+router.post(
+  "/change-password",
+  authMiddleware,
+  changePasswordValidator,
+  validationRequest,
+  changePassword
+);
 
 export default router;

@@ -105,3 +105,21 @@ export const resetPasswordValidator = [
     .isLength({ min: 8, max: 8 }),
   body("token", "Invalid token").trim().notEmpty().escape(), // remove special characters
 ];
+
+export const changePasswordValidator = [
+  body("currentPassword", "Please provide a current password.")
+    .trim()
+    .notEmpty()
+    .isLength({ min: 8 })
+    .withMessage("Password must be minium of 8 characters."),
+  body("newPassword", "Please provide a new password.")
+    .trim()
+    .notEmpty()
+    .isLength({ min: 8 })
+    .withMessage("Password must be minium of 8 characters."),
+  body("confirmPassword", "Please provide a confirm password.")
+    .trim()
+    .notEmpty()
+    .isLength({ min: 8 })
+    .withMessage("Password must be minium of 8 characters."),
+];

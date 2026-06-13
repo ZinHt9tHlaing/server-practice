@@ -28,6 +28,8 @@ import { ENV } from "@/config/env";
 import { CustomRequest } from "@/types/custom-type";
 import jwt from "jsonwebtoken";
 import { createError } from "@/utils/error";
+import { matchedData } from "express-validator";
+import { Prisma } from "../../../generated/prisma/client";
 
 export const register = async (
   req: Request,
@@ -687,4 +689,52 @@ export const authCheck = async (req: CustomRequest, res: Response) => {
     username: fullName,
     image: user?.image,
   });
+};
+
+export const changePassword = async (
+  req: CustomRequest,
+  res: Response,
+  next: NextFunction
+) => {
+  const data = matchedData(req);
+  const { currentPassword, newPassword, confirmPassword } = data;
+
+  const userId = req.userId as string;
+  const user = await getUserById(userId);
+  checkUserIfNotExist(user);
+
+  const isMatchPassword = await bcrypt.compare(currentPassword, user!.password);
+  if (!isMatchPassword) {
+    return next(
+      createError("Your current password is wrong.", 400, errorCode.invalid)
+    );
+  }
+
+  if (currentPassword === newPassword) {
+    return next(
+      createError("Please use different password!", 400, errorCode.invalid)
+    );
+  }
+
+  if (newPassword !== confirmPassword) {
+    return next(
+      createError(
+        "Password do not match. Please try again.",
+        400,
+        errorCode.invalid
+      )
+    );
+  }
+
+  const salt = await bcrypt.genSalt(10);
+  const hashPassword = await bcrypt.hash(newPassword, salt);
+
+  const updateData: Prisma.UserUpdateInput = {
+    password: hashPassword,
+    lastChangePassword: new Date(),
+  };
+
+  await updateUser(user!.id, updateData);
+
+  res.status(200).json({ message: "Password changed successfully." });
 };
