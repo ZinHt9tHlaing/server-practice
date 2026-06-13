@@ -51,6 +51,7 @@ model Post {
   category   Category    @relation(fields: [categoryId], references: [id])
   type       Type        @relation(fields: [typeId], references: [id])
   tags       PostTag[] // Implicit Many-to-Many
+  viewCount  Int         @default(0) // လူဘယ်နှစ်ယောက် ဝင်ကြည့်လဲ မှတ်ရန်
   createdAt  DateTime    @default(now())
   updatedAt  DateTime    @updatedAt
 }
@@ -80,6 +81,8 @@ model Product {
   images      ProductImage[]
   users       User[]
   tags        ProductTag[]
+  viewCount   Int @default(0) // လူဘယ်နှစ်ယောက် ဝင်ကြည့်လဲ မှတ်ရန်
+  searchCount Int @default(0) // Search result ကနေ ဘယ်နှစ်ခါ နှိပ်ခံရလဲ မှတ်ရန်
   createdAt   DateTime           @default(now())
   updatedAt   DateTime           @updatedAt
 }
@@ -90,6 +93,13 @@ model ProductImage {
   publicId  String  @db.VarChar(255)
   productId String
   product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+}
+
+model SearchTrend {
+  id        String   @id @default(cuid())
+  keyword   String   @unique @db.VarChar(100)
+  count     Int      @default(1) // ဘယ်နှစ်ခါ ရှာခံရလဲ
+  updatedAt DateTime @updatedAt
 }
 
 model User {

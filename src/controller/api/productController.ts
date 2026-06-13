@@ -145,33 +145,38 @@ export const searchProducts = async (req: CustomRequest, res: Response) => {
   };
 
   if (keyword) {
+    const cleanKeyword = keyword.toLowerCase().trim(); // Reduce case sensitivity
     whereClause.OR = [
-      { name: { contains: keyword, mode: "insensitive" } },
-      { description: { contains: keyword, mode: "insensitive" } },
-      { tags: { some: { name: { contains: keyword, mode: "insensitive" } } } },
+      { name: { contains: cleanKeyword, mode: "insensitive" } },
+      { description: { contains: cleanKeyword, mode: "insensitive" } },
+      {
+        tags: {
+          some: { name: { contains: cleanKeyword, mode: "insensitive" } },
+        },
+      },
     ];
   }
 
   if (minPrice !== undefined || maxPrice !== undefined) {
-    whereClause.price = {};
-    if (minPrice !== undefined) {
-      whereClause.price.gte = minPrice;
-    }
-
-    if (maxPrice !== undefined) {
-      whereClause.price.lte = maxPrice;
-    }
+    whereClause.AND = [
+      {
+        price: {
+          gte: minPrice,
+          lte: maxPrice,
+        },
+      },
+    ];
   }
 
   if (minRating !== undefined || maxRating !== undefined) {
-    whereClause.rating = {};
-    if (minRating !== undefined) {
-      whereClause.rating.gte = minRating;
-    }
-
-    if (maxRating !== undefined) {
-      whereClause.rating.lte = maxRating;
-    }
+    whereClause.AND = [
+      {
+        rating: {
+          gte: minRating,
+          lte: maxRating,
+        },
+      },
+    ];
   }
 
   const options: Prisma.ProductFindManyArgs = {
@@ -201,7 +206,7 @@ export const searchProducts = async (req: CustomRequest, res: Response) => {
   };
 
   const products = await getProductsList(options);
-  // const cacheKey = `products:${JSON.stringify(req.query)}`;
+  // const cacheKey = `products:${JSON.stringify(data)}`;
   // const products = await getOrSetCache(cacheKey, async () => {
   //   return await getProductsList(options);
   // });

@@ -1,12 +1,25 @@
 import type { Response, NextFunction } from "express";
 import { CustomRequest } from "@/types/custom-type";
-import { getPostWithRelations, getPostsLists } from "@/services/postServices";
+import {
+  getCategoryList,
+  getPostWithRelations,
+  getPostsLists,
+  getTypeList,
+} from "@/services/postServices";
 import { createError } from "@/utils/error";
 import { errorCode } from "@/config/errorCode";
 import { getUserById } from "@/services/authServices";
 import { checkUserIfNotExist } from "@/utils/auth";
 import { Prisma } from "../../../generated/prisma/client";
 import { getOrSetCache } from "@/utils/cache";
+import { matchedData } from "express-validator";
+import { prismaClient } from "@/services/prismaClient";
+import { prisma } from "@/lib/prisma";
+
+// Extract the argument types specifically from your extended client
+type ExtendedPostFindManyArgs = Parameters<
+  typeof prismaClient.post.findMany
+>[0];
 
 export const getPost = async (
   req: CustomRequest,
@@ -29,6 +42,18 @@ export const getPost = async (
   if (!post) {
     return next(createError("Post not found!", 404, errorCode.invalid));
   }
+
+  // Increment view count when user viewed post
+  await prisma.post
+    .update({
+      where: { id },
+      data: {
+        viewCount: { increment: 1 },
+      },
+    })
+    .catch((err) => {
+      console.error("Failed to increment view count:", err);
+    });
 
   // Remove author property from post and create new object with author fullName
   const { author, ...restPost } = post;
@@ -201,5 +226,125 @@ export const getInfinitePostsByPagination = async (
     nextCursor,
     prevCursor: lastCursor,
     posts,
+  });
+};
+
+export const searchPosts = async (req: CustomRequest, res: Response) => {
+  const data = matchedData(req);
+  const keyword = data.keyword as string;
+  const category = data.category as string | undefined;
+  const type = data.type as string | undefined;
+
+  const whereClause: Prisma.PostWhereInput = {};
+
+  if (keyword) {
+    const cleanKeyword = keyword.toLowerCase().trim(); // Reduce case sensitivity
+    // SearchTrend table မှာ keyword ရှိရင် count 1 တိုးမယ်၊ မရှိရင် အသစ်ဖန်တီးမယ် (Upsert)
+    await prisma.searchTrend.upsert({
+      where: { keyword: cleanKeyword },
+      update: { count: { increment: 1 } }, // Search Trend Count 1 တိုးပီး တင်ပေး (Database မှာရှိနေရင် update)
+      create: { keyword: cleanKeyword, count: 1 }, // Keyword မရှိသေးရင် ပထမဆုံးအကြိမ် စာရင်းထဲထည့်ပေး (Database မှာမရှိရင် create)
+    });
+
+    whereClause.OR = [
+      { title: { contains: cleanKeyword, mode: "insensitive" } },
+      { content: { contains: cleanKeyword, mode: "insensitive" } },
+      {
+        tags: {
+          some: { name: { contains: cleanKeyword, mode: "insensitive" } },
+        },
+      },
+    ];
+  }
+
+  let categoryList: string[] = [];
+  let typeList: string[] = [];
+
+  if (category) {
+    categoryList = category
+      .toString()
+      .split(",")
+      .map((category) => category.trim())
+      .filter((cat) => cat.length > 0 && /^[a-z0-9]+$/i.test(cat));
+
+    if (categoryList.length > 0) {
+      whereClause.categoryId = { in: categoryList };
+    }
+  }
+
+  if (type) {
+    typeList = type
+      .toString()
+      .split(",")
+      .map((type) => type.trim())
+      .filter((t) => t.length > 0 && /^[a-z0-9]+$/i.test(type));
+
+    if (typeList.length > 0) {
+      whereClause.typeId = { in: typeList };
+    }
+  }
+
+  const options: ExtendedPostFindManyArgs = {
+    where: whereClause,
+    select: {
+      id: true,
+      title: true,
+      content: true,
+      viewCount: true,
+      images: {
+        select: {
+          id: true,
+          imageUrl: true,
+          publicId: true,
+        },
+      },
+      updatedAt: true,
+      author: {
+        select: {
+          fullName: true,
+        },
+      },
+      tags: {
+        select: {
+          name: true,
+        },
+      },
+    },
+    orderBy: keyword
+      ? { id: "desc" } // Search Result
+      : { viewCount: "desc" }, // Trending Popular Posts
+  };
+
+  const posts = await getPostsLists(options);
+  // const cacheKey = `posts:${JSON.stringify(data)}`;
+  // const posts = await getOrSetCache(cacheKey, async () => {
+  //   return await getPostsLists(options);
+  // });
+
+  res.status(200).json({
+    message:
+      Object.keys(whereClause).length > 0
+        ? `Search results for '${keyword}'`
+        : "Trending Popular Posts",
+    totalCount: posts.length,
+    isTrending: !keyword, // if keyword is false, show trending
+    posts,
+  });
+};
+
+export const getCategoryType = async (req: CustomRequest, res: Response) => {
+  const userId = req.userId as string;
+  const user = await getUserById(userId);
+  checkUserIfNotExist(user);
+
+  const [categories, types] = await Promise.all([
+    getCategoryList(),
+    getTypeList(),
+  ]);
+
+  res.status(200).json({
+    message: "Get All Categories and Types",
+    categories,
+    types,
   });
 };

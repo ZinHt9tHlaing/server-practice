@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { prismaClient } from "./prismaClient";
+import { Prisma } from "../../generated/prisma/client";
 
 type ImageInput = {
   imageUrl: string;
@@ -142,6 +143,7 @@ export const getPostWithRelations = async (id: string) => {
       title: true,
       content: true,
       body: true,
+      viewCount: true,
       updatedAt: true,
       author: {
         select: {
@@ -178,4 +180,14 @@ export const getPostWithRelations = async (id: string) => {
 export const getPostsLists = async (options: PostFindManyArgs) => {
   // Can be changed options according to the Offset and Cursor based Pagination
   return prismaClient.post.findMany(options);
+};
+
+export const getCategoryList = async (
+  options?: Prisma.CategoryFindManyArgs
+) => {
+  return prisma.category.findMany(options);
+};
+
+export const getTypeList = async (options?: Prisma.TypeFindManyArgs) => {
+  return prisma.type.findMany(options);
 };

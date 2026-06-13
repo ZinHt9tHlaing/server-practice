@@ -73,3 +73,14 @@ export const getInfinitePostsByPaginationValidator = [
     .isInt({ gt: 2 }) // starts and shows from page 3
     .optional(),
 ];
+
+export const searchPostsValidator = [
+  query("keyword", "Search keyword is required!")
+    .optional()
+    .isString()
+    .trim()
+    .isLength({ min: 1, max: 100 })
+    .escape(),
+  query("category", "Category is invalid").optional().trim(),
+  query("type", "Type is invalid.").optional().trim(),
+];
